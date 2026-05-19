@@ -342,18 +342,9 @@
   }
 
   .stone-node.regen {
-    background: rgba(50,40,30,0.3);
-    border-color: rgba(90,75,55,0.3);
-  }
-
-  .stone-regen-counter {
-    position: absolute;
-    bottom: 1px;
-    right: 2px;
-    font-size: 0.52rem;
-    color: #8a7560;
-    font-family: 'Crimson Pro', serif;
-    font-style: italic;
+    background: transparent;
+    border-color: transparent;
+    opacity: 0;
   }
 
   @keyframes stoneCrumble {
@@ -417,6 +408,202 @@
     opacity: 0.35;
     cursor: not-allowed;
   }
+
+  /* ── AP UPGRADE ── */
+  .ap-upgrade {
+    margin-top: 10px;
+    padding: 9px 14px;
+    background: rgba(201,147,42,0.08);
+    border: 1px solid var(--gold-dim);
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .ap-upgrade-label {
+    font-size: 0.8rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .ap-upgrade-label strong { color: var(--gold-bright); font-style: normal; }
+  .ap-upgrade-btn {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    background: linear-gradient(135deg, var(--gold-dim) 0%, #9a7a2a 100%);
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .ap-upgrade-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #9a7a2a 0%, var(--gold) 100%);
+    box-shadow: 0 0 10px rgba(201,147,42,0.3);
+  }
+  .ap-upgrade-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .ap-unlocked-badge {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: #88cc66;
+    font-style: italic;
+    text-align: center;
+    padding: 5px 0;
+  }
+
+  /* ── SMELT FLASH ── */
+  .smelt-flash {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bark-light);
+    border: 2px solid #888;
+    border-radius: 4px;
+    padding: 14px 26px;
+    text-align: center;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    min-width: 180px;
+  }
+  .smelt-flash.show { opacity: 1; }
+  .smelt-flash-icon { font-size: 1.8rem; display: block; margin-bottom: 3px; }
+  .smelt-flash-text { font-family: 'Cinzel Decorative', serif; font-size: 0.7rem; letter-spacing: 0.08em; }
+  .smelt-flash.iron     { border-color: #9a8878; }
+  .smelt-flash.iron     .smelt-flash-text { color: #c8b8a8; }
+  .smelt-flash.aluminum { border-color: #a0b8c8; }
+  .smelt-flash.aluminum .smelt-flash-text { color: #b8d0e0; }
+  .smelt-flash.copper   { border-color: #c87840; }
+  .smelt-flash.copper   .smelt-flash-text { color: #e09858; }
+  .smelt-flash.nothing  { border-color: var(--bark-mid); }
+  .smelt-flash.nothing  .smelt-flash-text { color: var(--parchment-dim); }
+
+  /* ── DEMAND BADGE ── */
+  .demand-badge {
+    font-size: 0.65rem;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+    vertical-align: middle;
+    font-style: normal;
+  }
+  .demand-badge.active   { background: rgba(136,204,102,0.2); border: 1px solid #88cc66; color: #88cc66; }
+  .demand-badge.inactive { background: rgba(139,26,26,0.2);   border: 1px solid var(--blood); color: var(--blood-bright); }
+
+  /* ── WORKER ── */
+  .worker-panel .panel-title { color: #c8a878; }
+
+  .worker-locked-msg {
+    font-style: italic;
+    color: var(--parchment-dim);
+    font-size: 0.82rem;
+    margin-bottom: 12px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .worker-status {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .worker-stat {
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+    padding: 7px 10px;
+    text-align: center;
+  }
+
+  .worker-stat-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--parchment-dim);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .worker-stat-value {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.9rem;
+    color: #c8a878;
+  }
+
+  .worker-task-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .worker-task-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 2px;
+    border: 1px solid var(--bark-mid);
+    background: var(--bark);
+    color: var(--parchment-dim);
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .worker-task-btn.active {
+    border-color: #c8a878;
+    background: rgba(200,168,120,0.15);
+    color: #c8a878;
+  }
+
+  .worker-task-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .worker-upgrade-btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: 2px;
+    border: 1px solid #7a6040;
+    background: linear-gradient(135deg, #3a2a18 0%, #4a3420 100%);
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .worker-upgrade-btn:hover:not(:disabled) {
+    border-color: #c8a878;
+    box-shadow: 0 0 10px rgba(200,168,120,0.25);
+  }
+
+  .worker-upgrade-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .worker-max-badge {
+    text-align: center;
+    font-size: 0.72rem;
+    color: #88cc66;
+    font-style: italic;
+    padding: 6px 0 2px;
+  }
+
+  @keyframes workerPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+  .worker-acting { animation: workerPulse 0.6s ease; }
 
   .geode-flash {
     position: fixed;
@@ -795,7 +982,7 @@
 
   <header>
     <h1>The Last Woodcutter</h1>
-    <p class="subtitle">Eight actions. One life. Choose wisely.</p>
+    <p class="subtitle">Many actions. One life. Choose wisely.</p>
   </header>
 
   <!-- STATUS -->
@@ -823,6 +1010,7 @@
   <div class="actions-section">
     <div class="section-title">Action Points — Day's Allowance</div>
     <div class="ap-pips" id="apPips"></div>
+    <div id="apUpgradeSection"></div>
   </div>
 
   <div id="warningStrip" class="warning-strip"></div>
@@ -853,6 +1041,9 @@
       <!-- MINE (rendered by JS into this div) -->
       <div id="mineSection"></div>
 
+      <!-- WORKER (rendered by JS into this div) -->
+      <div id="workerSection"></div>
+
     </div>
 
     <!-- RIGHT COLUMN: Inventory + Market -->
@@ -871,6 +1062,18 @@
           <span class="inv-name">Geodes</span>
           <span class="inv-amount" id="geodeVal">0</span>
         </div>
+        <div class="inv-row" id="invIronRow" style="display:none">
+          <span class="inv-name">Iron</span>
+          <span class="inv-amount" id="ironVal">0</span>
+        </div>
+        <div class="inv-row" id="invAlumRow" style="display:none">
+          <span class="inv-name">Aluminum</span>
+          <span class="inv-amount" id="alumVal">0</span>
+        </div>
+        <div class="inv-row" id="invCopRow" style="display:none">
+          <span class="inv-name">Copper</span>
+          <span class="inv-amount" id="copVal">0</span>
+        </div>
         <div class="inv-row">
           <span class="inv-name">Stockpiled Food</span>
           <span class="inv-amount" id="invFoodVal">0</span>
@@ -880,14 +1083,9 @@
       <div class="panel">
         <div class="panel-title"><span class="panel-icon">⚖️</span> The Market</div>
 
-        <button class="action-btn sell" id="sellBtn" onclick="sellWood()">
-          <span>Sell 1 Log</span>
-          <span class="btn-cost">+5 gold · 1 AP</span>
-        </button>
-
-        <button class="action-btn sell" id="sellBulkBtn" onclick="sellWoodBulk()">
-          <span>Sell 5 Logs</span>
-          <span class="btn-cost">+30 gold · 1 AP</span>
+        <button class="action-btn sell" id="sellBtn" onclick="sellWood3()">
+          <span>Sell 3 Logs</span>
+          <span class="btn-cost">+20 gold · 2 AP</span>
         </button>
 
         <button class="action-btn sell" id="sellStoneBtn" onclick="sellStone()">
@@ -898,6 +1096,19 @@
         <button class="action-btn sell" id="sellGeodeBtn" onclick="sellGeode()">
           <span>Sell Geode</span>
           <span class="btn-cost" id="sellGeodeCost">+? gold · 1 AP</span>
+        </button>
+
+        <button class="action-btn sell" id="sellIronBtn" onclick="sellMetal('iron')" style="display:none">
+          <span>Sell Iron <span class="demand-badge" id="ironDemand"></span></span>
+          <span class="btn-cost">+25 gold · 1 AP</span>
+        </button>
+        <button class="action-btn sell" id="sellAlumBtn" onclick="sellMetal('aluminum')" style="display:none">
+          <span>Sell Aluminum <span class="demand-badge" id="alumDemand"></span></span>
+          <span class="btn-cost">+50 gold · 1 AP</span>
+        </button>
+        <button class="action-btn sell" id="sellCopBtn" onclick="sellMetal('copper')" style="display:none">
+          <span>Sell Copper <span class="demand-badge" id="copDemand"></span></span>
+          <span class="btn-cost">+100 gold · 1 AP</span>
         </button>
 
         <button class="action-btn buy" id="buyDayBtn" onclick="buyFood(1)">
@@ -922,6 +1133,11 @@
     <div class="geode-flash-val" id="geodeFlashVal"></div>
   </div>
 
+  <div class="smelt-flash" id="smeltFlash">
+    <span class="smelt-flash-icon" id="smeltFlashIcon"></span>
+    <div class="smelt-flash-text" id="smeltFlashText"></div>
+  </div>
+
   <!-- END DAY -->
   <div class="end-day-section">
     <div class="section-title">When Ready</div>
@@ -940,9 +1156,10 @@
 // ═══════════════════════════════
 //  GAME STATE
 // ═══════════════════════════════
-const TOTAL_AP = 8;
+const TOTAL_AP = 9;
 const CHOP_COST = 3;
 const MARKET_AP_COST = 1;
+const MARKET_AP_COST_BULK = 2;
 const WOOD_VALUE = 5;
 const WOOD_BULK_COUNT = 5;
 const WOOD_BULK_VALUE = 30;
@@ -961,6 +1178,31 @@ const GEODE_TIERS = [
   { label: 'Smooth Geode',   icon: '🔵', value: 25, weight: 3 },
   { label: 'Rare Crystal',   icon: '💎', value: 50, weight: 1 },
 ];
+
+const EXTRA_AP_COST  = 500;
+const SMELT_AP_COST  = 3;
+const SMELT_STONE_COST = 1;
+const SMELT_GOLD_COST  = 10;
+const METALS = {
+  iron:     { label: 'Iron',     icon: '🔩', value: 25  },
+  aluminum: { label: 'Aluminum', icon: '🪙', value: 50  },
+  copper:   { label: 'Copper',   icon: '🟤', value: 100 },
+};
+const SMELT_OUTCOMES = [
+  { result: null,       chance: 0.20 },
+  { result: 'iron',     chance: 0.45 },
+  { result: 'aluminum', chance: 0.30 },
+  { result: 'copper',   chance: 0.05 },
+];
+
+const WORKER_COST         = 250;
+const WORKER_UPGRADE_COST = 250;
+const WORKER_MAX_LEVEL    = 3;
+// Tasks available per level (1-indexed)
+const WORKER_TASKS = {
+  wood:  { label: 'Chop Wood',  minLevel: 1 },
+  stone: { label: 'Dig Stone',  minLevel: 3 },
+};
 
 // ═══════════════════════════════
 //  EVENT DEFINITIONS
@@ -1092,11 +1334,17 @@ function newGame() {
     activeEvent: null,
     eventCooldown: 0,
     // Mine
-    mineOwned:     false,
-    mineCollapsed: false,
-    mineNodes:     [],   // each: { id, status: 'intact'|'empty'|'regen', regenIn: 0 }
-    stone:         0,
-    geodes:        [],   // array of { tier index }
+    mineOwned:        false,
+    mineCollapsed:    false,
+    mineNodes:        [],
+    stone:            0,
+    geodes:           [],
+    // Smelting & AP upgrade
+    extraApUnlocked:  false,
+    metals:           { iron: 0, aluminum: 0, copper: 0 },
+    buyOrders:        [],
+    // Worker
+    worker:           null,  // null | { level: 1-3, task: 'wood'|'stone' }
   };
 
   for (let i = 0; i < TREE_COUNT; i++) {
@@ -1104,19 +1352,20 @@ function newGame() {
   }
 
   clearLog();
+  rollBuyOrders();
   log('You wake with 5 gold and one day\'s food. The forest awaits.', 'day');
   render();
 }
 
 // ── Modifier helpers ──────────────────────────────
 function mod() {
-  // Returns effective modifiers from active event (or defaults)
   const e = state.activeEvent;
+  const baseAp = TOTAL_AP + (state.extraApUnlocked ? 1 : 0);
   return {
     woodPrice:  e?.effects?.woodPrice  ?? 1,
     foodPrice:  e?.effects?.foodPrice  ?? 1,
     chopCost:   e?.effects?.chopCost   ?? CHOP_COST,
-    apMax:      e?.effects?.apMax      ?? TOTAL_AP,
+    apMax:      e?.effects?.apMax != null ? e.effects.apMax + (state.extraApUnlocked ? 1 : 0) : baseAp,
     regrowMod:  e?.effects?.regrowMod  ?? 0,
   };
 }
@@ -1151,6 +1400,140 @@ function initMineNodes() {
   state.mineNodes = [];
   for (let i = 0; i < MINE_NODE_COUNT; i++) {
     state.mineNodes.push({ id: i, status: 'intact', regenIn: 0 });
+  }
+}
+
+// Weekend = day divisible by 6 or 7 → two buy orders; otherwise one
+function rollBuyOrders() {
+  const allMetals = Object.keys(METALS);
+  const isWeekend = (state.day % 6 === 0 || state.day % 7 === 0);
+  const count = isWeekend ? 2 : 1;
+  const shuffled = [...allMetals].sort(() => Math.random() - 0.5);
+  state.buyOrders = shuffled.slice(0, count);
+}
+
+function showSmeltFlash(result) {
+  const el = document.getElementById('smeltFlash');
+  el.className = 'smelt-flash show ' + (result || 'nothing');
+  document.getElementById('smeltFlashIcon').textContent = result ? METALS[result].icon : '💨';
+  document.getElementById('smeltFlashText').textContent = result ? METALS[result].label + ' smelted!' : 'Stone crumbled to ash.';
+  setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function buyExtraAp() {
+  if (state.extraApUnlocked || state.gold < EXTRA_AP_COST || !state.mineOwned || state.dead) return;
+  state.gold -= EXTRA_AP_COST;
+  state.extraApUnlocked = true;
+  state.ap = Math.min(state.ap + 1, mod().apMax);
+  log(`Purchased a permanent extra Action Point for ${EXTRA_AP_COST} gold. The forge awakens.`, 'good');
+  render();
+}
+
+function smeltStone() {
+  if (!state.extraApUnlocked || state.stone < SMELT_STONE_COST || state.gold < SMELT_GOLD_COST || state.ap < SMELT_AP_COST || state.dead) return;
+  state.stone -= SMELT_STONE_COST;
+  state.gold  -= SMELT_GOLD_COST;
+  state.ap    -= SMELT_AP_COST;
+  let r = Math.random(), result = null;
+  for (const o of SMELT_OUTCOMES) { r -= o.chance; if (r <= 0) { result = o.result; break; } }
+  if (result) {
+    state.metals[result]++;
+    log(`Smelted 1 stone → ${METALS[result].label}! (−${SMELT_GOLD_COST}g)`, 'good');
+  } else {
+    log(`Smelted 1 stone → nothing but ash. (−${SMELT_GOLD_COST}g)`);
+  }
+  showSmeltFlash(result);
+  render();
+}
+
+function sellMetal(type) {
+  if (state.metals[type] < 1 || state.ap < MARKET_AP_COST || !state.buyOrders.includes(type) || state.dead) return;
+  state.metals[type]--;
+  state.gold += METALS[type].value;
+  state.ap   -= MARKET_AP_COST;
+  document.getElementById('goldVal').classList.add('spinning');
+  setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
+  log(`Sold 1 ${METALS[type].label} for ${METALS[type].value} gold.`, 'good');
+  render();
+}
+
+// ═══════════════════════════════
+//  WORKER
+// ═══════════════════════════════
+
+function hireWorker() {
+  if (state.worker || state.gold < WORKER_COST || state.dead) return;
+  state.gold -= WORKER_COST;
+  state.worker = { level: 1, task: 'wood' };
+  log(`You hired a worker for ${WORKER_COST} gold. They will chop wood each day.`, 'good');
+  render();
+}
+
+function upgradeWorker() {
+  if (!state.worker || state.worker.level >= WORKER_MAX_LEVEL || state.dead) return;
+  if (state.gold < WORKER_UPGRADE_COST) return;
+  state.gold -= WORKER_UPGRADE_COST;
+  state.worker.level++;
+  log(`Worker promoted to level ${state.worker.level} for ${WORKER_UPGRADE_COST} gold.`, 'good');
+  
+  // Worker reaches level 2: chop one additional wood
+  if (state.worker.level === 2) {
+    state.wood += 1;
+    log(`Worker chops an additional log!`, 'good');
+  }
+  
+  render();
+}
+
+function setWorkerTask(task) {
+  if (!state.worker || state.dead) return;
+  if (WORKER_TASKS[task].minLevel > state.worker.level) return;
+  state.worker.task = task;
+  log(`Worker assigned to: ${WORKER_TASKS[task].label}.`);
+  render();
+}
+
+// Called at end of each day — worker produces passively
+function workerAct() {
+  if (!state.worker) return;
+  const { task, level } = state.worker;
+
+  if (task === 'wood') {
+    const standing = state.trees.filter(t => t.status === 'standing');
+    if (standing.length === 0) {
+      log('Worker found no trees to chop today.');
+      return;
+    }
+    const tree = standing[Math.floor(Math.random() * standing.length)];
+    const baseRegrow = Math.floor(Math.random() * 4) + 2;
+    tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
+    tree.status = 'stump';
+    state.wood += 1;
+    log(`Worker chopped 1 tree — +1 log. (${state.wood} logs total)`);
+
+  } else if (task === 'stone') {
+    if (!state.mineOwned || state.mineCollapsed) {
+      log('Worker found the mine closed — no stone today.');
+      return;
+    }
+    const intact = state.mineNodes.filter(n => n.status === 'intact');
+    if (intact.length === 0) {
+      log('Worker found no intact stone nodes today.');
+      return;
+    }
+    const node = intact[Math.floor(Math.random() * intact.length)];
+    node.regenIn = Math.floor(Math.random() * 5) + 3;
+    node.status = 'regen';
+    state.stone += 1;
+    // Check collapse
+    const anyIntact = state.mineNodes.some(n => n.status === 'intact');
+    if (!anyIntact) {
+      state.mineCollapsed = true;
+      state.mineOwned = false;
+      log('The mine has completely collapsed from worker digging. Pay 100g to reopen.', 'bad');
+    } else {
+      log(`Worker dug 1 stone — +1 stone. (${state.stone} stone total)`);
+    }
   }
 }
 
@@ -1222,7 +1605,7 @@ function digStone() {
   if (intact.length === 0) return;
 
   const node = intact[Math.floor(Math.random() * intact.length)];
-  node.regenIn = Math.floor(Math.random() * 5) + 3; // 3–7 days
+  node.regenIn = Math.floor(Math.random() * 5) + 4; // 4-8 days
 
   const nodeEl = document.getElementById('mineNode-' + node.id);
   if (nodeEl) {
@@ -1257,11 +1640,11 @@ function digStone() {
 }
 
 function sellStone() {
-  if (state.stone < 2 || state.ap < MARKET_AP_COST) return;
+  if (state.stone < 2 || state.ap < MARKET_AP_COST_BULK) return;
   const val = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
   state.stone -= 2;
   state.gold += val;
-  state.ap -= MARKET_AP_COST;
+  state.ap -= MARKET_AP_COST_BULK;
   document.getElementById('goldVal').classList.add('spinning');
   setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
   log(`Sold 2 stone for ${val} gold. Total: ${state.gold} gold.`, 'good');
@@ -1292,11 +1675,7 @@ function renderMineGrid() {
       div.textContent = '🪨';
     } else if (node.status === 'regen') {
       div.className = 'stone-node regen';
-      div.textContent = node.regenIn <= 1 ? '·' : '·';
-      const ctr = document.createElement('span');
-      ctr.className = 'stone-regen-counter';
-      ctr.textContent = node.regenIn + 'd';
-      div.appendChild(ctr);
+      // no content, no counter — hidden from player like a stump
     } else {
       div.className = 'stone-node empty';
     }
@@ -1315,7 +1694,7 @@ function chopWood() {
   if (available.length === 0) return;
 
   const tree = available[Math.floor(Math.random() * available.length)];
-  const baseRegrow = Math.floor(Math.random() * 4) + 2;
+  const baseRegrow = Math.floor(Math.random() * 4) + 3; // 3-6 days
   tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
 
   const treeEl = document.getElementById('treeCell-' + tree.id);
@@ -1332,47 +1711,38 @@ function chopWood() {
   render();
 }
 
-function sellWood() {
-  if (state.wood < 1 || state.ap < MARKET_AP_COST) return;
-  const val = effectiveWoodValue(false);
-  state.wood -= 1;
-  state.gold += val;
-  state.ap -= MARKET_AP_COST;
+function sellWood3() {
+  if (state.wood < 3 || state.ap < 2) return;
+  state.wood -= 3;
+  state.gold += 20;
+  state.ap -= 2;
 
   const el = document.getElementById('goldVal');
   el.classList.add('spinning');
   setTimeout(() => el.classList.remove('spinning'), 300);
-  log(`Sold 1 log for ${val} gold. Total: ${state.gold} gold.`, 'good');
-  render();
-}
-
-function sellWoodBulk() {
-  if (state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST) return;
-  const val = effectiveWoodValue(true);
-  state.wood -= WOOD_BULK_COUNT;
-  state.gold += val;
-  state.ap -= MARKET_AP_COST;
-
-  const el = document.getElementById('goldVal');
-  el.classList.add('spinning');
-  setTimeout(() => el.classList.remove('spinning'), 300);
-  log(`Sold 5 logs in bulk for ${val} gold. Total: ${state.gold} gold.`, 'good');
+  log(`Sold 3 logs for 20 gold. Total: ${state.gold} gold.`, 'good');
   render();
 }
 
 function buyFood(days) {
   const cost = effectiveFoodCost(days);
-  if (state.gold < cost || state.ap < MARKET_AP_COST) return;
+  let ap_cost = MARKET_AP_COST
+  if(days === FOOD_WEEK_DAYS){
+    ap_cost = MARKET_AP_COST_BULK;
+  };
+  if (state.gold < cost || state.ap < ap_cost) return;
   state.gold -= cost;
   state.food += days;
-  state.ap -= MARKET_AP_COST;
+  state.ap -= ap_cost;
   log(`Bought ${days === 1 ? 'one day\'s' : 'a week\'s'} worth of food for ${cost} gold.`);
   render();
 }
 
 function endDay() {
-  if (state.food < 1) {
-    // Starve
+  if (state.dead) return;
+
+  // ── Food resolution ──────────────────────────────
+  if (state.food === 0) {
     state.dead = true;
     log('You had no food at day\'s end. Starvation claims you.', 'bad');
     showOverlay(false, `Day ${state.day} — you starved with ${state.gold} gold and ${state.wood} logs unspent.`);
@@ -1380,7 +1750,26 @@ function endDay() {
     return;
   }
 
-  state.food -= 1;
+  if (state.worker && state.food === 1) {
+    // One ration, two mouths — 50/50
+    log('Only one ration remains. You and your worker fight over it...', 'bad');
+    if (Math.random() < 0.5) {
+      state.dead = true;
+      log('You lost. Your worker takes the food and leaves you to die.', 'bad');
+      showOverlay(false, `Day ${state.day} — killed by your own worker over the last ration.`);
+      render();
+      return;
+    } else {
+      log('You took the last ration. Your worker, unfed, walks away.', 'bad');
+      state.worker = null;
+      state.food -= 1;
+    }
+  } else {
+    state.food -= state.worker ? 2 : 1;
+  }
+
+  // ── Worker acts ──────────────────────────────────
+  if (state.worker) workerAct();
 
   // Tick active event
   if (state.activeEvent) {
@@ -1421,18 +1810,22 @@ function endDay() {
   rollEvent();
 
   state.day++;
-  // AP respects event modifier
   state.ap = mod().apMax;
+  rollBuyOrders();
 
-  let msg = `Day ${state.day} begins. Consumed 1 food — ${state.food} days remain.`;
+  let msg = `Day ${state.day} begins. Consumed ${state.worker ? '2 food (you + worker)' : '1 food'} — ${state.food} days remain.`;
   if (regrew > 0) msg += ` ${regrew} tree${regrew > 1 ? 's' : ''} regrew overnight.`;
   if (state.activeEvent) msg += ` ⚑ ${state.activeEvent.title}.`;
+  if (state.extraApUnlocked) {
+    const isWeekend = state.day % 6 === 0 || state.day % 7 === 0;
+    msg += ` Orders: ${state.buyOrders.map(k => METALS[k].label).join(' & ')}${isWeekend ? ' (weekend)' : ''}.`;
+  }
   log(msg, 'day');
 
-  // Win condition — survive 30 days
-  if (state.day > 30) {
+  // Win condition — survive 100 years (36,475 days)
+  if (state.day > 36475) {
     state.won = true;
-    showOverlay(true, `You survived 30 days in the forest with ${state.gold} gold.`);
+    showOverlay(true, `You survived 100 years in the forest with ${state.gold} gold.`);
   }
 
   render();
@@ -1513,34 +1906,28 @@ function render() {
   chopBtn.disabled = state.ap < chopCost || standingCount === 0 || state.dead;
   chopBtn.textContent = `Chop Wood — ${chopCost} Actions → 1 Log`;
 
-  // Market buttons — live prices
-  const sv1 = effectiveWoodValue(false);
-  const svB = effectiveWoodValue(true);
+  // Market buttons
   const fc1 = effectiveFoodCost(1);
   const fc7 = effectiveFoodCost(7);
-  const s1btn = document.getElementById('sellBtn');
-  const sBbtn = document.getElementById('sellBulkBtn');
+  const s3btn = document.getElementById('sellBtn');
   const fd1btn = document.getElementById('buyDayBtn');
   const fd7btn = document.getElementById('buyWeekBtn');
-  s1btn.querySelector('.btn-cost').textContent  = `+${sv1} gold · 1 AP`;
-  sBbtn.querySelector('.btn-cost').textContent  = `+${svB} gold · 1 AP`;
   fd1btn.querySelector('.btn-cost').textContent = `${fc1} gold · 1 AP`;
-  fd7btn.querySelector('.btn-cost').textContent = `${fc7} gold · 1 AP`;
-  s1btn.disabled  = state.wood < 1 || state.ap < MARKET_AP_COST || state.dead;
-  sBbtn.disabled  = state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST || state.dead;
+  fd7btn.querySelector('.btn-cost').textContent = `${fc7} gold · 2 AP`;
+  s3btn.disabled  = state.wood < 3 || state.ap < 2 || state.dead;
   fd1btn.disabled = state.gold < fc1 || state.ap < MARKET_AP_COST || state.dead;
-  fd7btn.disabled = state.gold < fc7 || state.ap < MARKET_AP_COST || state.dead;
+  fd7btn.disabled = state.gold < fc7 || state.ap < MARKET_AP_COST_BULK || state.dead;
 
   // Stone & geode sell buttons
   const stoneVal = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
   const sSbtn  = document.getElementById('sellStoneBtn');
   const sGbtn  = document.getElementById('sellGeodeBtn');
-  sSbtn.querySelector('#sellStoneCost').textContent = `+${stoneVal} gold · 1 AP`;
+  sSbtn.querySelector('#sellStoneCost').textContent = `+${stoneVal} gold · 2 AP`;
   const nextGeode = state.geodes[0];
   sGbtn.querySelector('#sellGeodeCost').textContent = nextGeode
     ? `+${effectiveGeodeValue(nextGeode.tierIdx)} gold · 1 AP (${GEODE_TIERS[nextGeode.tierIdx].label})`
     : '+? gold · 1 AP';
-  sSbtn.disabled = state.stone < 2 || state.ap < MARKET_AP_COST || state.dead;
+  sSbtn.disabled = state.stone < 2 || state.ap < MARKET_AP_COST_BULK || state.dead;
   sGbtn.disabled = state.geodes.length === 0 || state.ap < MARKET_AP_COST || state.dead;
 
   // ── Mine panel ──────────────────────────────────
@@ -1576,6 +1963,12 @@ function render() {
   } else {
     // Mine is open and owned
     const intactCount = state.mineNodes.filter(n => n.status === 'intact').length;
+    const smeltBtn = state.extraApUnlocked
+      ? `<button class="mine-btn dig" id="smeltBtn" onclick="smeltStone()"
+           style="margin-top:6px;border-color:#888;background:linear-gradient(135deg,#2a2a2a 0%,#3a3a3a 100%)">
+           Smelt Stone — 3 AP + 10g → Metal
+         </button>`
+      : '';
     mineSection.innerHTML = `
       <div class="panel">
         <div class="panel-title"><span class="panel-icon">⛏️</span> The Mine</div>
@@ -1583,14 +1976,104 @@ function render() {
         <button class="mine-btn dig" id="digBtn" onclick="digStone()">
           Dig Stone — 5 AP → 1 Stone${intactCount === 0 ? ' (depleted)' : ''}
         </button>
+        ${smeltBtn}
       </div>`;
     document.getElementById('digBtn').disabled = state.ap < MINE_AP_COST || intactCount === 0 || state.dead;
+    if (state.extraApUnlocked) {
+      document.getElementById('smeltBtn').disabled =
+        state.stone < SMELT_STONE_COST || state.gold < SMELT_GOLD_COST || state.ap < SMELT_AP_COST || state.dead;
+    }
     renderMineGrid();
   }
 
   // Stone & geode sell buttons visibility
   sSbtn.style.display = mineEverSeen ? '' : 'none';
   sGbtn.style.display = mineEverSeen ? '' : 'none';
+
+  // ── Worker panel ─────────────────────────────────
+  const workerSection = document.getElementById('workerSection');
+  const canSeeWorker = state.worker || state.gold >= 200 || state.day >= 10;
+  if (!canSeeWorker) {
+    workerSection.innerHTML = '';
+  } else if (!state.worker) {
+    workerSection.innerHTML = `
+      <div class="panel worker-panel">
+        <div class="panel-title"><span class="panel-icon">👷</span> The Worker</div>
+        <div class="mine-locked">
+          <div class="worker-locked-msg">A labourer waits at your gate. For <strong style="color:var(--gold-bright)">${WORKER_COST} gold</strong> they will work each day — but they eat one food per day.</div>
+          <button class="mine-btn open" id="hireWorkerBtn" onclick="hireWorker()">Hire Worker — ${WORKER_COST} Gold</button>
+        </div>
+      </div>`;
+    document.getElementById('hireWorkerBtn').disabled = state.gold < WORKER_COST || state.dead;
+  } else {
+    const w = state.worker;
+    const canUpgrade = w.level < WORKER_MAX_LEVEL;
+    const upgradeLabel = canUpgrade
+      ? `Promote to Level ${w.level + 1} — ${WORKER_UPGRADE_COST} Gold`
+      : '';
+    const stoneTaskAvail = w.level >= WORKER_TASKS.stone.minLevel && state.mineOwned;
+    workerSection.innerHTML = `
+      <div class="panel worker-panel">
+        <div class="panel-title"><span class="panel-icon">👷</span> The Worker</div>
+        <div class="worker-status">
+          <div class="worker-stat">
+            <span class="worker-stat-label">Level</span>
+            <span class="worker-stat-value">${w.level} / ${WORKER_MAX_LEVEL}</span>
+          </div>
+          <div class="worker-stat">
+            <span class="worker-stat-label">Task</span>
+            <span class="worker-stat-value">${WORKER_TASKS[w.task].label}</span>
+          </div>
+        </div>
+        <div class="worker-task-row">
+          <button class="worker-task-btn ${w.task === 'wood' ? 'active' : ''}" onclick="setWorkerTask('wood')">🌲 Wood</button>
+          <button class="worker-task-btn ${w.task === 'stone' ? 'active' : ''}" onclick="setWorkerTask('stone')" ${stoneTaskAvail ? '' : 'disabled'}>
+            🪨 Stone${w.level < WORKER_TASKS.stone.minLevel ? ' (Lv.3)' : !state.mineOwned ? ' (no mine)' : ''}
+          </button>
+        </div>
+        ${canUpgrade
+          ? `<button class="worker-upgrade-btn" id="workerUpgradeBtn" onclick="upgradeWorker()">${upgradeLabel}</button>`
+          : `<div class="worker-max-badge">✦ Max Level Reached</div>`
+        }
+      </div>`;
+    if (canUpgrade) {
+      document.getElementById('workerUpgradeBtn').disabled = state.gold < WORKER_UPGRADE_COST || state.dead;
+    }
+  }
+
+  // ── AP upgrade section ───────────────────────────
+  const apSec = document.getElementById('apUpgradeSection');
+  if (state.extraApUnlocked) {
+    apSec.innerHTML = `<div class="ap-unlocked-badge">✦ Extra Action Point unlocked — Forge active</div>`;
+  } else if (state.mineOwned && state.gold >= 200) {
+    apSec.innerHTML = `
+      <div class="ap-upgrade">
+        <span class="ap-upgrade-label">A <strong>permanent extra Action Point</strong> can be purchased — and unlocks the Forge.</span>
+        <button class="ap-upgrade-btn" id="apUpgradeBtn" onclick="buyExtraAp()">500 Gold</button>
+      </div>`;
+    document.getElementById('apUpgradeBtn').disabled = state.gold < EXTRA_AP_COST || state.dead;
+  } else {
+    apSec.innerHTML = '';
+  }
+
+  // ── Metal sell buttons ───────────────────────────
+  const smeltUnlocked = state.extraApUnlocked;
+  const metalDefs = [
+    { key: 'iron',     btnId: 'sellIronBtn', badgeId: 'ironDemand', rowId: 'invIronRow', valId: 'ironVal' },
+    { key: 'aluminum', btnId: 'sellAlumBtn', badgeId: 'alumDemand', rowId: 'invAlumRow', valId: 'alumVal' },
+    { key: 'copper',   btnId: 'sellCopBtn',  badgeId: 'copDemand',  rowId: 'invCopRow',  valId: 'copVal'  },
+  ];
+  metalDefs.forEach(({ key, btnId, badgeId, rowId, valId }) => {
+    const hasMetal = state.metals[key] > 0;
+    const inDemand = state.buyOrders.includes(key);
+    document.getElementById(valId).textContent  = state.metals[key];
+    document.getElementById(rowId).style.display = smeltUnlocked ? '' : 'none';
+    document.getElementById(btnId).style.display = smeltUnlocked ? '' : 'none';
+    const badge = document.getElementById(badgeId);
+    badge.textContent = inDemand ? 'in demand' : 'no orders';
+    badge.className   = 'demand-badge ' + (inDemand ? 'active' : 'inactive');
+    document.getElementById(btnId).disabled = !hasMetal || !inDemand || state.ap < MARKET_AP_COST || state.dead;
+  });
 
   // ── Event banner ────────────────────────────────
   const banner = document.getElementById('eventBanner');
@@ -1619,11 +2102,15 @@ function render() {
   // Warning
   const warn = document.getElementById('warningStrip');
   const foodCostToday = effectiveFoodCost(1);
+  const dailyFoodNeeded = state.worker ? 2 : 1;
   if (state.food === 0 && !state.dead) {
     warn.textContent = '⚠ You have no food — end the day and you will starve.';
     warn.className = 'warning-strip visible';
-  } else if (state.food === 1 && state.wood === 0 && state.gold < foodCostToday) {
-    warn.textContent = '⚠ One more day without food money means death. Chop and sell.';
+  } else if (state.worker && state.food === 1 && !state.dead) {
+    warn.textContent = '⚠ Only 1 food left — you and your worker may fight. One of you will not survive.';
+    warn.className = 'warning-strip visible';
+  } else if (state.food < dailyFoodNeeded && state.wood === 0 && state.gold < foodCostToday) {
+    warn.textContent = '⚠ Not enough food for tomorrow. Chop and sell now.';
     warn.className = 'warning-strip visible';
   } else if (state.ap < chopCost && standingCount > 0 && state.wood === 0 && state.gold < foodCostToday) {
     warn.textContent = '⚠ Too few actions remain to chop. Consider resting and hoping the trees hold.';
