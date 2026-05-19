@@ -342,18 +342,9 @@
   }
 
   .stone-node.regen {
-    background: rgba(50,40,30,0.3);
-    border-color: rgba(90,75,55,0.3);
-  }
-
-  .stone-regen-counter {
-    position: absolute;
-    bottom: 1px;
-    right: 2px;
-    font-size: 0.52rem;
-    color: #8a7560;
-    font-family: 'Crimson Pro', serif;
-    font-style: italic;
+    background: transparent;
+    border-color: transparent;
+    opacity: 0;
   }
 
   @keyframes stoneCrumble {
@@ -1223,7 +1214,7 @@ function digStone() {
   if (intact.length === 0) return;
 
   const node = intact[Math.floor(Math.random() * intact.length)];
-  node.regenIn = Math.floor(Math.random() * 5) + 3; // 3–7 days
+  node.regenIn = Math.floor(Math.random() * 5) + 4; // 4-8 days
 
   const nodeEl = document.getElementById('mineNode-' + node.id);
   if (nodeEl) {
@@ -1293,11 +1284,7 @@ function renderMineGrid() {
       div.textContent = '🪨';
     } else if (node.status === 'regen') {
       div.className = 'stone-node regen';
-      div.textContent = node.regenIn <= 1 ? '·' : '·';
-      const ctr = document.createElement('span');
-      ctr.className = 'stone-regen-counter';
-      ctr.textContent = node.regenIn + 'd';
-      div.appendChild(ctr);
+      // no content, no counter — hidden from player like a stump
     } else {
       div.className = 'stone-node empty';
     }
@@ -1316,7 +1303,7 @@ function chopWood() {
   if (available.length === 0) return;
 
   const tree = available[Math.floor(Math.random() * available.length)];
-  const baseRegrow = Math.floor(Math.random() * 4) + 2;
+  const baseRegrow = Math.floor(Math.random() * 4) + 3; // 3-6 days
   tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
 
   const treeEl = document.getElementById('treeCell-' + tree.id);
