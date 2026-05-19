@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Last Woodcutter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+  :root {
+    --bark: #2a1a0e;
+    --bark-light: #3d2812;
+    --bark-mid: #5c3d1e;
+    --moss: #3a4a2a;
+    --moss-light: #556644;
+    --gold: #c9932a;
+    --gold-bright: #e8b84b;
+    --gold-dim: #7a5a1a;
+    --amber: #d4631a;
+    --sky: #1a2a3a;
+    --sky-light: #243444;
+    --parchment: #e8d9b8;
+    --parchment-dim: #b8a888;
+    --blood: #8b1a1a;
+    --blood-bright: #cc2222;
+    --fog: rgba(232, 217, 184, 0.07);
+    --shadow: rgba(0,0,0,0.6);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--bark);
+    color: var(--parchment);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Woodgrain texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      92deg,
+      transparent 0px,
+      rgba(0,0,0,0.03) 1px,
+      transparent 2px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      88deg,
+      transparent 0px,
+      rgba(255,255,255,0.015) 1px,
+      transparent 3px,
+      transparent 20px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .game-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--bark-mid);
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(1.1rem, 3vw, 1.7rem);
+    letter-spacing: 0.08em;
+    color: var(--gold-bright);
+    text-shadow: 0 0 30px rgba(201,147,42,0.4), 0 2px 4px rgba(0,0,0,0.8);
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    font-style: italic;
+    color: var(--parchment-dim);
+    font-size: 0.9rem;
+    margin-top: 5px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── DAY STATUS BAR ── */
+  .status-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .stat-box {
+    background: var(--bark-light);
+    border: 1px solid var(--bark-mid);
+    border-radius: 3px;
+    padding: 10px 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-box::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold-dim);
+  }
+
+  .stat-box.danger::after { background: var(--blood-bright); }
+  .stat-box.good::after { background: var(--moss-light); }
+
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--parchment-dim);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .stat-value {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.4rem;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+
+  .stat-value.danger { color: var(--blood-bright); }
+  .stat-value.good { color: #88cc66; }
+
+  .stat-sub {
+    font-size: 0.72rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  /* ── ACTION POINTS ── */
+  .actions-section {
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--bark-mid);
+  }
+
+  .ap-pips {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .pip {
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    border: 1px solid var(--bark-mid);
+    background: var(--bark-light);
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .pip.used {
+    background: var(--bark);
+    border-color: var(--bark-mid);
+    opacity: 0.35;
+  }
+
+  .pip.available {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 100%);
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 8px rgba(201,147,42,0.35);
+  }
+
+  .pip.wood {
+    background: linear-gradient(135deg, var(--bark-mid) 0%, #6b4a25 100%);
+    border-color: #8b6a3a;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 580px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--bark-light);
+    border: 1px solid var(--bark-mid);
+    border-radius: 3px;
+    padding: 14px;
+  }
+
+  .panel-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-icon {
+    font-size: 1rem;
+  }
+
+  /* ── FOREST ── */
+  .forest-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .tree {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: default;
+    position: relative;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .tree.standing {
+    background: rgba(58,74,42,0.5);
+    border-color: var(--moss);
+  }
+
+  /* Empty plot where a stump was — no border, no bg */
+  .tree.stump {
+    background: transparent;
+    border-color: transparent;
+    opacity: 0;
+  }
+
+  /* Sprouting — faint outline, small seedling */
+  .tree.regrowing {
+    background: rgba(42,58,30,0.25);
+    border-color: rgba(58,74,42,0.3);
+  }
+
+  .tree-regrow-counter {
+    position: absolute;
+    bottom: 1px;
+    right: 2px;
+    font-size: 0.55rem;
+    color: var(--moss-light);
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+  }
+
+  @keyframes treeFall {
+    0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+    40%  { transform: scale(1.1) rotate(-15deg); opacity: 1; }
+    100% { transform: scale(0.3) rotate(45deg); opacity: 0; }
+  }
+
+  .tree.falling {
+    animation: treeFall 0.35s ease-in forwards;
+    pointer-events: none;
+  }
+
+  /* ── MINE ── */
+  .mine-locked {
+    text-align: center;
+    padding: 18px 10px;
+  }
+
+  .mine-locked-msg {
+    font-style: italic;
+    color: var(--parchment-dim);
+    font-size: 0.82rem;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .mine-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .stone-node {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: default;
+    position: relative;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .stone-node.intact {
+    background: rgba(60,50,40,0.6);
+    border-color: #6a5a48;
+  }
+
+  .stone-node.empty {
+    background: transparent;
+    border-color: transparent;
+    opacity: 0;
+  }
+
+  .stone-node.regen {
+    background: rgba(50,40,30,0.3);
+    border-color: rgba(90,75,55,0.3);
+  }
+
+  .stone-regen-counter {
+    position: absolute;
+    bottom: 1px;
+    right: 2px;
+    font-size: 0.52rem;
+    color: #8a7560;
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+  }
+
+  @keyframes stoneCrumble {
+    0%   { transform: scale(1); opacity: 1; }
+    30%  { transform: scale(1.1) rotate(5deg); opacity: 1; }
+    100% { transform: scale(0.2) rotate(-10deg); opacity: 0; }
+  }
+
+  .stone-node.crumbling {
+    animation: stoneCrumble 0.3s ease-in forwards;
+    pointer-events: none;
+  }
+
+  .mine-collapsed-msg {
+    text-align: center;
+    padding: 14px 8px;
+    font-style: italic;
+    color: var(--blood-bright);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .mine-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 2px;
+    border: 1px solid;
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .mine-btn:last-child { margin-bottom: 0; }
+
+  .mine-btn.dig {
+    background: linear-gradient(135deg, #3a2e22 0%, #4a3a28 100%);
+    border-color: #7a6548;
+  }
+
+  .mine-btn.dig:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4a3a28 0%, #5a4a34 100%);
+    box-shadow: 0 0 10px rgba(122,101,72,0.35);
+  }
+
+  .mine-btn.open {
+    background: linear-gradient(135deg, var(--gold-dim) 0%, #9a7a2a 100%);
+    border-color: var(--gold);
+  }
+
+  .mine-btn.open:hover:not(:disabled) {
+    background: linear-gradient(135deg, #9a7a2a 0%, var(--gold) 100%);
+    box-shadow: 0 0 12px rgba(201,147,42,0.3);
+  }
+
+  .mine-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .geode-flash {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bark-light);
+    border: 2px solid var(--gold);
+    border-radius: 4px;
+    padding: 16px 28px;
+    text-align: center;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .geode-flash.show { opacity: 1; }
+
+  .geode-flash-icon { font-size: 2rem; display: block; margin-bottom: 4px; }
+
+  .geode-flash-text {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.75rem;
+    color: var(--gold-bright);
+    letter-spacing: 0.1em;
+  }
+
+  .geode-flash-val {
+    font-size: 0.8rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+    margin-top: 3px;
+  }
+
+  .chop-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, var(--moss) 0%, var(--moss-light) 100%);
+    border: 1px solid var(--moss-light);
+    border-radius: 2px;
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .chop-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--moss-light) 0%, #6a7f55 100%);
+    box-shadow: 0 0 12px rgba(85,102,68,0.4);
+  }
+
+  .chop-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ── INVENTORY ── */
+  .inv-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .inv-row:last-child { border-bottom: none; }
+
+  .inv-name {
+    font-size: 0.85rem;
+    color: var(--parchment-dim);
+  }
+
+  .inv-amount {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1rem;
+    color: var(--gold-bright);
+  }
+
+  /* ── MARKET / ACTIONS ── */
+  .action-btn {
+    width: 100%;
+    padding: 11px 14px;
+    margin-bottom: 8px;
+    border-radius: 2px;
+    border: 1px solid;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+
+  .action-btn:last-child { margin-bottom: 0; }
+
+  .action-btn.sell {
+    background: rgba(201,147,42,0.12);
+    border-color: var(--gold-dim);
+    color: var(--parchment);
+  }
+
+  .action-btn.sell:hover:not(:disabled) {
+    background: rgba(201,147,42,0.22);
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(201,147,42,0.2);
+  }
+
+  .action-btn.buy {
+    background: rgba(26,42,58,0.4);
+    border-color: #2a4a6a;
+    color: var(--parchment);
+  }
+
+  .action-btn.buy:hover:not(:disabled) {
+    background: rgba(36,52,68,0.6);
+    border-color: #3a6a9a;
+  }
+
+  .action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .btn-cost {
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--parchment-dim);
+  }
+
+  /* ── EVENT BANNER ── */
+  .event-banner {
+    border-radius: 3px;
+    border: 1px solid;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .event-banner.visible { display: block; }
+  .event-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.05;
+    background: repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px);
+  }
+  .event-banner.bad  { background: rgba(139,26,26,0.2);  border-color: var(--blood); }
+  .event-banner.good { background: rgba(58,74,42,0.3);   border-color: var(--moss-light); }
+  .event-banner.neutral { background: rgba(26,42,58,0.35); border-color: #2a5a7a; }
+  .event-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .event-banner.bad .event-title     { color: var(--blood-bright); }
+  .event-banner.good .event-title    { color: #88cc66; }
+  .event-banner.neutral .event-title { color: #6ab0d0; }
+  .event-desc {
+    font-size: 0.82rem;
+    font-style: italic;
+    color: var(--parchment-dim);
+    line-height: 1.5;
+  }
+  .event-effects {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--parchment-dim);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .effect-tag {
+    background: rgba(0,0,0,0.3);
+    border-radius: 2px;
+    padding: 2px 7px;
+    font-style: normal;
+  }
+  .effect-tag.neg { color: var(--blood-bright); }
+  .effect-tag.pos { color: #88cc66; }
+  .effect-tag.neu { color: #6ab0d0; }
+  .event-duration {
+    position: absolute;
+    top: 8px; right: 10px;
+    font-size: 0.65rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+  }
+
+  /* ── END DAY ── */
+  .end-day-section {
+    margin-top: 4px;
+  }
+
+  .end-day-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--sky) 0%, var(--sky-light) 100%);
+    border: 1px solid #2a4a6a;
+    border-radius: 3px;
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .end-day-btn:hover {
+    background: linear-gradient(135deg, var(--sky-light) 0%, #2e4a62 100%);
+    border-color: #3a6a9a;
+    box-shadow: 0 0 20px rgba(42,74,106,0.4);
+  }
+
+  /* ── LOG ── */
+  .log-panel {
+    background: var(--bark);
+    border: 1px solid var(--bark-mid);
+    border-radius: 3px;
+    padding: 12px;
+    margin-top: 12px;
+    max-height: 150px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--bark-mid) transparent;
+  }
+
+  .log-entry {
+    font-size: 0.8rem;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--parchment-dim);
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+  .log-entry.bad { color: var(--blood-bright); }
+  .log-entry.good { color: #88cc66; }
+  .log-entry.day { color: var(--gold); font-style: normal; font-weight: 600; }
+
+  /* ── DEATH SCREEN ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+
+  .overlay.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .overlay-box {
+    background: var(--bark-light);
+    border: 2px solid var(--blood);
+    border-radius: 4px;
+    padding: 32px 40px;
+    text-align: center;
+    max-width: 380px;
+  }
+
+  .overlay-box.win {
+    border-color: var(--gold);
+  }
+
+  .overlay-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.5rem;
+    color: var(--blood-bright);
+    margin-bottom: 12px;
+  }
+
+  .overlay-box.win .overlay-title {
+    color: var(--gold-bright);
+  }
+
+  .overlay-msg {
+    font-size: 0.95rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+    margin-bottom: 22px;
+    line-height: 1.6;
+  }
+
+  .restart-btn {
+    padding: 12px 28px;
+    background: var(--bark-mid);
+    border: 1px solid var(--gold-dim);
+    border-radius: 2px;
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .restart-btn:hover {
+    border-color: var(--gold);
+    background: var(--bark-mid);
+    box-shadow: 0 0 12px rgba(201,147,42,0.3);
+  }
+
+  /* ── TOOLTIP / WARNING ── */
+  .warning-strip {
+    background: rgba(139,26,26,0.25);
+    border: 1px solid var(--blood);
+    border-radius: 2px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--blood-bright);
+    font-style: italic;
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  .warning-strip.visible { display: block; }
+
+  /* ── PROGRESS BARS ── */
+  .progress-bar {
+    height: 3px;
+    background: var(--bark);
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+  }
+
+  .progress-fill.danger {
+    background: linear-gradient(90deg, var(--blood), var(--blood-bright));
+  }
+
+  /* Coin flip animation */
+  @keyframes coinSpin {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15) rotateY(90deg); }
+    100% { transform: scale(1); }
+  }
+
+  .spinning { animation: coinSpin 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box" id="overlayBox">
+    <div class="overlay-title" id="overlayTitle">You Have Perished</div>
+    <div class="overlay-msg" id="overlayMsg">The forest does not mourn the careless.</div>
+    <button class="restart-btn" onclick="restartGame()">Begin Again</button>
+  </div>
+</div>
+
+<div class="game-wrapper">
+
+  <header>
+    <h1>The Last Woodcutter</h1>
+    <p class="subtitle">Eight actions. One life. Choose wisely.</p>
+  </header>
+
+  <!-- STATUS -->
+  <div class="status-bar">
+    <div class="stat-box" id="dayBox">
+      <span class="stat-label">Day</span>
+      <span class="stat-value" id="dayVal">1</span>
+      <span class="stat-sub">of survival</span>
+    </div>
+    <div class="stat-box" id="goldBox">
+      <span class="stat-label">Gold</span>
+      <span class="stat-value" id="goldVal">5</span>
+      <span class="stat-sub" id="goldSub">starting coin</span>
+      <div class="progress-bar"><div class="progress-fill" id="goldBar" style="width:5%"></div></div>
+    </div>
+    <div class="stat-box" id="foodBox">
+      <span class="stat-label">Food</span>
+      <span class="stat-value" id="foodVal">1</span>
+      <span class="stat-sub" id="foodSub">day supply</span>
+      <div class="progress-bar"><div class="progress-fill" id="foodBar" style="width:14%"></div></div>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions-section">
+    <div class="section-title">Action Points — Day's Allowance</div>
+    <div class="ap-pips" id="apPips"></div>
+  </div>
+
+  <div id="warningStrip" class="warning-strip"></div>
+
+  <!-- EVENT BANNER -->
+  <div id="eventBanner" class="event-banner">
+    <span class="event-duration" id="eventDuration"></span>
+    <div class="event-title" id="eventTitle"></div>
+    <div class="event-desc" id="eventDesc"></div>
+    <div class="event-effects" id="eventEffects"></div>
+  </div>
+
+  <!-- MAIN GRID: left = forest + mine, right = inventory + market -->
+  <div class="main-grid">
+
+    <!-- LEFT COLUMN: Forest then Mine -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+
+      <!-- FOREST -->
+      <div class="panel">
+        <div class="panel-title"><span class="panel-icon">🌲</span> The Forest</div>
+        <div class="forest-grid" id="forestGrid"></div>
+        <button class="chop-btn" id="chopBtn" onclick="chopWood()">
+          Chop Wood — 3 Actions → 1 Log
+        </button>
+      </div>
+
+      <!-- MINE (rendered by JS into this div) -->
+      <div id="mineSection"></div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Inventory + Market -->
+    <div>
+      <div class="panel" style="margin-bottom:10px;">
+        <div class="panel-title"><span class="panel-icon">🪵</span> Inventory</div>
+        <div class="inv-row">
+          <span class="inv-name">Wood Logs</span>
+          <span class="inv-amount" id="woodVal">0</span>
+        </div>
+        <div class="inv-row">
+          <span class="inv-name">Stone</span>
+          <span class="inv-amount" id="stoneVal">0</span>
+        </div>
+        <div class="inv-row">
+          <span class="inv-name">Geodes</span>
+          <span class="inv-amount" id="geodeVal">0</span>
+        </div>
+        <div class="inv-row">
+          <span class="inv-name">Stockpiled Food</span>
+          <span class="inv-amount" id="invFoodVal">0</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><span class="panel-icon">⚖️</span> The Market</div>
+
+        <button class="action-btn sell" id="sellBtn" onclick="sellWood()">
+          <span>Sell 1 Log</span>
+          <span class="btn-cost">+5 gold · 1 AP</span>
+        </button>
+
+        <button class="action-btn sell" id="sellBulkBtn" onclick="sellWoodBulk()">
+          <span>Sell 5 Logs</span>
+          <span class="btn-cost">+30 gold · 1 AP</span>
+        </button>
+
+        <button class="action-btn sell" id="sellStoneBtn" onclick="sellStone()">
+          <span>Sell 2 Stone</span>
+          <span class="btn-cost" id="sellStoneCost">+50 gold · 1 AP</span>
+        </button>
+
+        <button class="action-btn sell" id="sellGeodeBtn" onclick="sellGeode()">
+          <span>Sell Geode</span>
+          <span class="btn-cost" id="sellGeodeCost">+? gold · 1 AP</span>
+        </button>
+
+        <button class="action-btn buy" id="buyDayBtn" onclick="buyFood(1)">
+          <span>Buy Food (1 day)</span>
+          <span class="btn-cost">5 gold · 1 AP</span>
+        </button>
+
+        <button class="action-btn buy" id="buyWeekBtn" onclick="buyFood(7)">
+          <span>Buy Food (1 week)</span>
+          <span class="btn-cost">25 gold · 1 AP</span>
+        </button>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- GEODE FLASH -->
+  <div class="geode-flash" id="geodeFlash">
+    <span class="geode-flash-icon" id="geodeFlashIcon">💎</span>
+    <div class="geode-flash-text" id="geodeFlashText">Geode Found!</div>
+    <div class="geode-flash-val" id="geodeFlashVal"></div>
+  </div>
+
+  <!-- END DAY -->
+  <div class="end-day-section">
+    <div class="section-title">When Ready</div>
+    <button class="end-day-btn" id="endDayBtn" onclick="endDay()">
+      ☽ Rest &amp; End the Day
+    </button>
+  </div>
+
+  <!-- LOG -->
+  <div class="section-title" style="margin-top:16px;">Chronicle</div>
+  <div class="log-panel" id="logPanel"></div>
+
+</div>
+
+<script>
+// ═══════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════
+const TOTAL_AP = 8;
+const CHOP_COST = 3;
+const MARKET_AP_COST = 1;
+const WOOD_VALUE = 5;
+const WOOD_BULK_COUNT = 5;
+const WOOD_BULK_VALUE = 30;
+const FOOD_DAY_COST = 5;
+const FOOD_WEEK_COST = 25;
+const FOOD_WEEK_DAYS = 7;
+const TREE_COUNT = 10;
+
+const MINE_COST       = 100;
+const MINE_AP_COST    = 5;
+const MINE_NODE_COUNT = 8;
+const STONE_PAIR_VALUE = 50;   // sell 2 stone = 50g
+const GEODE_CHANCE    = 0.15;  // 15% per dig
+const GEODE_TIERS = [
+  { label: 'Common Geode',   icon: '🪨', value: 10, weight: 6 },
+  { label: 'Smooth Geode',   icon: '🔵', value: 25, weight: 3 },
+  { label: 'Rare Crystal',   icon: '💎', value: 50, weight: 1 },
+];
+
+// ═══════════════════════════════
+//  EVENT DEFINITIONS
+//  Each event: { id, title, desc, tone, duration, weight, effects: {} }
+//  effects keys: woodPrice, foodPrice, chopCost, apMax, regrowMod, freeFood, woodLoss
+//    woodPrice:  multiplier on sell value (e.g. 2 = double)
+//    foodPrice:  multiplier on food costs (e.g. 2 = twice as expensive)
+//    chopCost:   flat override for AP cost to chop (e.g. 4)
+//    apMax:      flat override for total AP (e.g. 7)
+//    regrowMod:  extra days added to every regrow roll (e.g. 2 = slower)
+//    freeFood:   days of food granted on event start
+//    woodLoss:   logs lost on event start
+// ═══════════════════════════════
+const EVENT_POOL = [
+  {
+    id: 'merchant',
+    title: 'Travelling Merchant',
+    desc: 'A merchant caravan passes through, hungry for timber. Wood prices surge.',
+    tone: 'good',
+    duration: 2,
+    weight: 3,
+    effects: { woodPrice: 2 },
+    tags: [{ label: 'Wood: ×2 gold', cls: 'pos' }],
+  },
+  {
+    id: 'festival',
+    title: 'Harvest Festival',
+    desc: 'The village celebrates. Food is shared freely — a day\'s ration finds its way to your door.',
+    tone: 'good',
+    duration: 1,
+    weight: 2,
+    effects: { freeFood: 2 },
+    tags: [{ label: '+2 free food', cls: 'pos' }],
+  },
+  {
+    id: 'drought',
+    title: 'Dry Season',
+    desc: 'The wells run low and crops wither. Food traders raise their prices sharply.',
+    tone: 'bad',
+    duration: 3,
+    weight: 3,
+    effects: { foodPrice: 2 },
+    tags: [{ label: 'Food: ×2 cost', cls: 'neg' }],
+  },
+  {
+    id: 'frost',
+    title: 'Early Frost',
+    desc: 'A killing frost descends on the forest. Trees struggle to recover from the cold.',
+    tone: 'bad',
+    duration: 3,
+    weight: 2,
+    effects: { regrowMod: 3 },
+    tags: [{ label: 'Trees: +3 days to regrow', cls: 'neg' }],
+  },
+  {
+    id: 'storm',
+    title: 'Great Storm',
+    desc: 'Gales tear through the valley. Your body aches — every swing of the axe costs more.',
+    tone: 'bad',
+    duration: 2,
+    weight: 2,
+    effects: { chopCost: 5 },
+    tags: [{ label: 'Chop cost: 5 AP', cls: 'neg' }],
+  },
+  {
+    id: 'sickness',
+    title: 'The Wasting Sickness',
+    desc: 'A fever grips you. You can barely stand. You have fewer hours of work in you today.',
+    tone: 'bad',
+    duration: 2,
+    weight: 2,
+    effects: { apMax: 6 },
+    tags: [{ label: 'Max AP: 6', cls: 'neg' }],
+  },
+  {
+    id: 'thieves',
+    title: 'Bandits on the Road',
+    desc: 'Thieves raided your woodpile in the night. Some logs are gone.',
+    tone: 'bad',
+    duration: 1,
+    weight: 2,
+    effects: { woodLoss: 2 },
+    tags: [{ label: '-2 logs stolen', cls: 'neg' }],
+  },
+  {
+    id: 'blight',
+    title: 'Market Collapse',
+    desc: 'Rival woodcutters flood the market. Nobody wants your logs at full price.',
+    tone: 'bad',
+    duration: 3,
+    weight: 2,
+    effects: { woodPrice: 0.5 },
+    tags: [{ label: 'Wood: ×½ gold', cls: 'neg' }],
+  },
+  {
+    id: 'springrains',
+    title: 'Spring Rains',
+    desc: 'Warm rains breathe life into the forest. The trees grow back with unusual speed.',
+    tone: 'good',
+    duration: 3,
+    weight: 2,
+    effects: { regrowMod: -1 },
+    tags: [{ label: 'Trees: −1 day to regrow', cls: 'pos' }],
+  },
+  {
+    id: 'calm',
+    title: 'Clear Skies',
+    desc: 'A rare peaceful morning. You feel rested and sharp — an extra hour of light.',
+    tone: 'good',
+    duration: 1,
+    weight: 2,
+    effects: { apMax: 10 },
+    tags: [{ label: 'Max AP: 10', cls: 'pos' }],
+  },
+];
+
+let state = {};
+
+function newGame() {
+  state = {
+    day: 1,
+    gold: 5,
+    wood: 0,
+    food: 1,
+    ap: TOTAL_AP,
+    trees: [],
+    dead: false,
+    won: false,
+    activeEvent: null,
+    eventCooldown: 0,
+    // Mine
+    mineOwned:     false,
+    mineCollapsed: false,
+    mineNodes:     [],   // each: { id, status: 'intact'|'empty'|'regen', regenIn: 0 }
+    stone:         0,
+    geodes:        [],   // array of { tier index }
+  };
+
+  for (let i = 0; i < TREE_COUNT; i++) {
+    state.trees.push({ id: i, status: 'standing', regrowIn: 0 });
+  }
+
+  clearLog();
+  log('You wake with 5 gold and one day\'s food. The forest awaits.', 'day');
+  render();
+}
+
+// ── Modifier helpers ──────────────────────────────
+function mod() {
+  // Returns effective modifiers from active event (or defaults)
+  const e = state.activeEvent;
+  return {
+    woodPrice:  e?.effects?.woodPrice  ?? 1,
+    foodPrice:  e?.effects?.foodPrice  ?? 1,
+    chopCost:   e?.effects?.chopCost   ?? CHOP_COST,
+    apMax:      e?.effects?.apMax      ?? TOTAL_AP,
+    regrowMod:  e?.effects?.regrowMod  ?? 0,
+  };
+}
+
+function effectiveWoodValue(bulk) {
+  const base = bulk ? WOOD_BULK_VALUE : WOOD_VALUE;
+  return Math.max(1, Math.round(base * mod().woodPrice));
+}
+
+function effectiveFoodCost(days) {
+  const base = days === 1 ? FOOD_DAY_COST : FOOD_WEEK_COST;
+  return Math.max(1, Math.round(base * mod().foodPrice));
+}
+
+function effectiveGeodeValue(tierIdx) {
+  const base = GEODE_TIERS[tierIdx].value;
+  // geode prices boosted by merchant event, crushed by blight
+  return Math.max(1, Math.round(base * mod().woodPrice)); // reuse woodPrice multiplier for now
+}
+
+function rollGeodeTier() {
+  const total = GEODE_TIERS.reduce((s, t) => s + t.weight, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < GEODE_TIERS.length; i++) {
+    r -= GEODE_TIERS[i].weight;
+    if (r <= 0) return i;
+  }
+  return 0;
+}
+
+function initMineNodes() {
+  state.mineNodes = [];
+  for (let i = 0; i < MINE_NODE_COUNT; i++) {
+    state.mineNodes.push({ id: i, status: 'intact', regenIn: 0 });
+  }
+}
+
+// ── Mine event overlay flash ──────────────────────
+function showGeodeFlash(tierIdx) {
+  const tier = GEODE_TIERS[tierIdx];
+  const val  = effectiveGeodeValue(tierIdx);
+  const el   = document.getElementById('geodeFlash');
+  document.getElementById('geodeFlashIcon').textContent = tier.icon;
+  document.getElementById('geodeFlashText').textContent = tier.label + ' Found!';
+  document.getElementById('geodeFlashVal').textContent  = `Worth ${val} gold`;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ── Event rolling ─────────────────────────────────
+function rollEvent() {
+  // Don't fire if an event is already running or on cooldown
+  if (state.activeEvent || state.eventCooldown > 0) {
+    if (state.eventCooldown > 0) state.eventCooldown--;
+    return;
+  }
+  // ~35% chance per day (starts from day 3)
+  if (state.day < 3 || Math.random() > 0.35) return;
+
+  // Weighted random pick
+  const totalWeight = EVENT_POOL.reduce((s, e) => s + e.weight, 0);
+  let roll = Math.random() * totalWeight;
+  let chosen = null;
+  for (const ev of EVENT_POOL) {
+    roll -= ev.weight;
+    if (roll <= 0) { chosen = ev; break; }
+  }
+  if (!chosen) chosen = EVENT_POOL[0];
+
+  state.activeEvent = { ...chosen, daysLeft: chosen.duration };
+  state.eventCooldown = 0;
+
+  // Instant effects
+  if (chosen.effects.freeFood) {
+    state.food += chosen.effects.freeFood;
+    log(`${chosen.title}: received ${chosen.effects.freeFood} days of free food.`, 'good');
+  }
+  if (chosen.effects.woodLoss) {
+    const lost = Math.min(state.wood, chosen.effects.woodLoss);
+    state.wood -= lost;
+    if (lost > 0) log(`${chosen.title}: lost ${lost} log${lost > 1 ? 's' : ''} to bandits.`, 'bad');
+  }
+}
+
+// ═══════════════════════════════
+//  MINE ACTIONS
+// ═══════════════════════════════
+
+function openMine() {
+  if (state.mineOwned || state.gold < MINE_COST || state.dead) return;
+  state.gold -= MINE_COST;
+  state.mineOwned = true;
+  state.mineCollapsed = false;
+  initMineNodes();
+  log(`Purchased the old mine for ${MINE_COST} gold. Stone awaits inside.`, 'good');
+  render();
+}
+
+function digStone() {
+  if (!state.mineOwned || state.mineCollapsed) return;
+  if (state.ap < MINE_AP_COST) return;
+  const intact = state.mineNodes.filter(n => n.status === 'intact');
+  if (intact.length === 0) return;
+
+  const node = intact[Math.floor(Math.random() * intact.length)];
+  node.regenIn = Math.floor(Math.random() * 5) + 3; // 3–7 days
+
+  const nodeEl = document.getElementById('mineNode-' + node.id);
+  if (nodeEl) {
+    nodeEl.classList.add('crumbling');
+    setTimeout(() => { node.status = 'regen'; render(); }, 300);
+  } else {
+    node.status = 'regen';
+  }
+
+  state.ap -= MINE_AP_COST;
+  state.stone += 1;
+
+  // Geode roll
+  let geodeMsg = '';
+  if (Math.random() < GEODE_CHANCE) {
+    const tierIdx = rollGeodeTier();
+    state.geodes.push({ tierIdx });
+    showGeodeFlash(tierIdx);
+    geodeMsg = ` A ${GEODE_TIERS[tierIdx].label} tumbled loose!`;
+  }
+
+  // Check total collapse — all nodes empty or regen
+  const anyIntact = state.mineNodes.some(n => n.status === 'intact');
+  if (!anyIntact) {
+    state.mineCollapsed = true;
+    state.mineOwned = false;
+    log('The mine has completely collapsed — every vein is exhausted. Pay 100g to reopen it.', 'bad');
+  } else {
+    log(`Dug 1 stone.${geodeMsg} ${intact.length - 1} intact node${intact.length - 1 !== 1 ? 's' : ''} remaining.`);
+  }
+  render();
+}
+
+function sellStone() {
+  if (state.stone < 2 || state.ap < MARKET_AP_COST) return;
+  const val = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
+  state.stone -= 2;
+  state.gold += val;
+  state.ap -= MARKET_AP_COST;
+  document.getElementById('goldVal').classList.add('spinning');
+  setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
+  log(`Sold 2 stone for ${val} gold. Total: ${state.gold} gold.`, 'good');
+  render();
+}
+
+function sellGeode() {
+  if (state.geodes.length === 0 || state.ap < MARKET_AP_COST) return;
+  const geode = state.geodes.shift();
+  const val = effectiveGeodeValue(geode.tierIdx);
+  state.gold += val;
+  state.ap -= MARKET_AP_COST;
+  document.getElementById('goldVal').classList.add('spinning');
+  setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
+  log(`Sold a ${GEODE_TIERS[geode.tierIdx].label} for ${val} gold.`, 'good');
+  render();
+}
+
+function renderMineGrid() {
+  const grid = document.getElementById('mineGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  state.mineNodes.forEach(node => {
+    const div = document.createElement('div');
+    div.id = 'mineNode-' + node.id;
+    if (node.status === 'intact') {
+      div.className = 'stone-node intact';
+      div.textContent = '🪨';
+    } else if (node.status === 'regen') {
+      div.className = 'stone-node regen';
+      div.textContent = node.regenIn <= 1 ? '·' : '·';
+      const ctr = document.createElement('span');
+      ctr.className = 'stone-regen-counter';
+      ctr.textContent = node.regenIn + 'd';
+      div.appendChild(ctr);
+    } else {
+      div.className = 'stone-node empty';
+    }
+    grid.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════
+
+function chopWood() {
+  const chopCost = mod().chopCost;
+  if (state.ap < chopCost) return;
+  const available = state.trees.filter(t => t.status === 'standing');
+  if (available.length === 0) return;
+
+  const tree = available[Math.floor(Math.random() * available.length)];
+  const baseRegrow = Math.floor(Math.random() * 4) + 2;
+  tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
+
+  const treeEl = document.getElementById('treeCell-' + tree.id);
+  if (treeEl) {
+    treeEl.classList.add('falling');
+    setTimeout(() => { tree.status = 'stump'; render(); }, 350);
+  } else {
+    tree.status = 'stump';
+  }
+
+  state.ap -= chopCost;
+  state.wood += 1;
+  log(`Chopped a tree — gained 1 log. It will regrow in ${tree.regrowIn} days.`);
+  render();
+}
+
+function sellWood() {
+  if (state.wood < 1 || state.ap < MARKET_AP_COST) return;
+  const val = effectiveWoodValue(false);
+  state.wood -= 1;
+  state.gold += val;
+  state.ap -= MARKET_AP_COST;
+
+  const el = document.getElementById('goldVal');
+  el.classList.add('spinning');
+  setTimeout(() => el.classList.remove('spinning'), 300);
+  log(`Sold 1 log for ${val} gold. Total: ${state.gold} gold.`, 'good');
+  render();
+}
+
+function sellWoodBulk() {
+  if (state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST) return;
+  const val = effectiveWoodValue(true);
+  state.wood -= WOOD_BULK_COUNT;
+  state.gold += val;
+  state.ap -= MARKET_AP_COST;
+
+  const el = document.getElementById('goldVal');
+  el.classList.add('spinning');
+  setTimeout(() => el.classList.remove('spinning'), 300);
+  log(`Sold 5 logs in bulk for ${val} gold. Total: ${state.gold} gold.`, 'good');
+  render();
+}
+
+function buyFood(days) {
+  const cost = effectiveFoodCost(days);
+  if (state.gold < cost || state.ap < MARKET_AP_COST) return;
+  state.gold -= cost;
+  state.food += days;
+  state.ap -= MARKET_AP_COST;
+  log(`Bought ${days === 1 ? 'one day\'s' : 'a week\'s'} worth of food for ${cost} gold.`);
+  render();
+}
+
+function endDay() {
+  if (state.food < 1) {
+    // Starve
+    state.dead = true;
+    log('You had no food at day\'s end. Starvation claims you.', 'bad');
+    showOverlay(false, `Day ${state.day} — you starved with ${state.gold} gold and ${state.wood} logs unspent.`);
+    render();
+    return;
+  }
+
+  state.food -= 1;
+
+  // Tick active event
+  if (state.activeEvent) {
+    state.activeEvent.daysLeft--;
+    if (state.activeEvent.daysLeft <= 0) {
+      log(`The ${state.activeEvent.title} has passed.`, state.activeEvent.tone === 'good' ? '' : '');
+      state.activeEvent = null;
+      state.eventCooldown = 2; // grace period before next event
+    }
+  }
+
+  // Regrow trees
+  let regrew = 0;
+  state.trees.forEach(t => {
+    if (t.status === 'stump') {
+      t.regrowIn--;
+      if (t.regrowIn <= 0) { t.status = 'standing'; regrew++; }
+    }
+  });
+
+  // Regen mine nodes
+  if (state.mineOwned || state.mineCollapsed) {
+    let regenned = 0;
+    state.mineNodes.forEach(n => {
+      if (n.status === 'regen') {
+        n.regenIn--;
+        if (n.regenIn <= 0) { n.status = 'intact'; regenned++; }
+      }
+    });
+    // If mine was collapsed and at least one node regenned back, it's reopenable
+    // (collapse just means owned=false; nodes still tick)
+    if (regenned > 0 && state.mineCollapsed) {
+      // silently tick, player must re-buy
+    }
+  }
+
+  // Roll for new event BEFORE incrementing day (so it fires on the new day's open)
+  rollEvent();
+
+  state.day++;
+  // AP respects event modifier
+  state.ap = mod().apMax;
+
+  let msg = `Day ${state.day} begins. Consumed 1 food — ${state.food} days remain.`;
+  if (regrew > 0) msg += ` ${regrew} tree${regrew > 1 ? 's' : ''} regrew overnight.`;
+  if (state.activeEvent) msg += ` ⚑ ${state.activeEvent.title}.`;
+  log(msg, 'day');
+
+  // Win condition — survive 30 days
+  if (state.day > 30) {
+    state.won = true;
+    showOverlay(true, `You survived 30 days in the forest with ${state.gold} gold.`);
+  }
+
+  render();
+}
+
+// ═══════════════════════════════
+//  RENDER
+// ═══════════════════════════════
+
+function render() {
+  // Day
+  document.getElementById('dayVal').textContent = state.day;
+
+  // Gold
+  const goldEl = document.getElementById('goldVal');
+  goldEl.textContent = state.gold;
+  goldEl.className = 'stat-value' + (state.gold < 5 ? ' danger' : '');
+  document.getElementById('goldSub').textContent = state.gold >= 25 ? 'comfortable' : state.gold >= 10 ? 'modest reserves' : 'barely enough';
+  document.getElementById('goldBar').style.width = Math.min(100, (state.gold / 50) * 100) + '%';
+  document.getElementById('goldBar').className = 'progress-fill' + (state.gold < 5 ? ' danger' : '');
+  document.getElementById('goldBox').className = 'stat-box' + (state.gold < 5 ? ' danger' : state.gold >= 20 ? ' good' : '');
+
+  // Food
+  const foodEl = document.getElementById('foodVal');
+  foodEl.textContent = state.food;
+  foodEl.className = 'stat-value' + (state.food < 2 ? ' danger' : '');
+  document.getElementById('foodSub').textContent = state.food === 0 ? 'starving!' : state.food === 1 ? 'last ration' : state.food < 4 ? `${state.food} days left` : `${state.food} days stocked`;
+  document.getElementById('foodBar').style.width = Math.min(100, (state.food / 7) * 100) + '%';
+  document.getElementById('foodBar').className = 'progress-fill' + (state.food < 2 ? ' danger' : '');
+  document.getElementById('foodBox').className = 'stat-box' + (state.food === 0 ? ' danger' : state.food >= 5 ? ' good' : '');
+
+  // Wood
+  document.getElementById('woodVal').textContent = state.wood;
+  document.getElementById('stoneVal').textContent = state.stone;
+  document.getElementById('geodeVal').textContent = state.geodes.length;
+  document.getElementById('invFoodVal').textContent = state.food;
+
+  // AP pips
+  const pips = document.getElementById('apPips');
+  pips.innerHTML = '';
+  const apMax = mod().apMax;
+  for (let i = 0; i < apMax; i++) {
+    const pip = document.createElement('div');
+    pip.className = i < state.ap ? 'pip available' : 'pip used';
+    pips.appendChild(pip);
+  }
+
+  // Forest
+  const grid = document.getElementById('forestGrid');
+  grid.innerHTML = '';
+  const standingCount = state.trees.filter(t => t.status === 'standing').length;
+  state.trees.forEach((tree) => {
+    const div = document.createElement('div');
+    div.id = 'treeCell-' + tree.id;
+
+    if (tree.status === 'standing') {
+      div.className = 'tree standing';
+      div.textContent = '🌲';
+    } else if (tree.status === 'stump') {
+      div.className = 'tree stump';
+      div.textContent = '';
+    } else {
+      // regrowing
+      div.className = 'tree regrowing';
+      div.textContent = tree.regrowIn <= 1 ? '🌱' : '·';
+      const ctr = document.createElement('span');
+      ctr.className = 'tree-regrow-counter';
+      ctr.textContent = tree.regrowIn + 'd';
+      div.appendChild(ctr);
+    }
+
+    grid.appendChild(div);
+  });
+
+  // Chop button — reflect effective cost
+  const chopCost = mod().chopCost;
+  const chopBtn = document.getElementById('chopBtn');
+  chopBtn.disabled = state.ap < chopCost || standingCount === 0 || state.dead;
+  chopBtn.textContent = `Chop Wood — ${chopCost} Actions → 1 Log`;
+
+  // Market buttons — live prices
+  const sv1 = effectiveWoodValue(false);
+  const svB = effectiveWoodValue(true);
+  const fc1 = effectiveFoodCost(1);
+  const fc7 = effectiveFoodCost(7);
+  const s1btn = document.getElementById('sellBtn');
+  const sBbtn = document.getElementById('sellBulkBtn');
+  const fd1btn = document.getElementById('buyDayBtn');
+  const fd7btn = document.getElementById('buyWeekBtn');
+  s1btn.querySelector('.btn-cost').textContent  = `+${sv1} gold · 1 AP`;
+  sBbtn.querySelector('.btn-cost').textContent  = `+${svB} gold · 1 AP`;
+  fd1btn.querySelector('.btn-cost').textContent = `${fc1} gold · 1 AP`;
+  fd7btn.querySelector('.btn-cost').textContent = `${fc7} gold · 1 AP`;
+  s1btn.disabled  = state.wood < 1 || state.ap < MARKET_AP_COST || state.dead;
+  sBbtn.disabled  = state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST || state.dead;
+  fd1btn.disabled = state.gold < fc1 || state.ap < MARKET_AP_COST || state.dead;
+  fd7btn.disabled = state.gold < fc7 || state.ap < MARKET_AP_COST || state.dead;
+
+  // Stone & geode sell buttons
+  const stoneVal = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
+  const sSbtn  = document.getElementById('sellStoneBtn');
+  const sGbtn  = document.getElementById('sellGeodeBtn');
+  sSbtn.querySelector('#sellStoneCost').textContent = `+${stoneVal} gold · 1 AP`;
+  const nextGeode = state.geodes[0];
+  sGbtn.querySelector('#sellGeodeCost').textContent = nextGeode
+    ? `+${effectiveGeodeValue(nextGeode.tierIdx)} gold · 1 AP (${GEODE_TIERS[nextGeode.tierIdx].label})`
+    : '+? gold · 1 AP';
+  sSbtn.disabled = state.stone < 2 || state.ap < MARKET_AP_COST || state.dead;
+  sGbtn.disabled = state.geodes.length === 0 || state.ap < MARKET_AP_COST || state.dead;
+
+  // ── Mine panel ──────────────────────────────────
+  const mineSection = document.getElementById('mineSection');
+  const mineEverSeen = state.mineOwned || state.mineCollapsed || state.stone > 0 || state.geodes.length > 0;
+
+  if (!mineEverSeen) {
+    // Tease the mine once the player has enough gold to think about it or hits day 8
+    if (state.gold >= 50 || state.day >= 8) {
+      mineSection.innerHTML = `
+        <div class="panel">
+          <div class="panel-title"><span class="panel-icon">⛏️</span> The Old Mine</div>
+          <div class="mine-locked">
+            <div class="mine-locked-msg">A long-abandoned mine sits at the edge of your land. Stone and rarer things lie within — for <strong style="color:var(--gold-bright)">100 gold</strong>.</div>
+            <button class="mine-btn open" id="openMineBtn" onclick="openMine()">Open Mine — 100 Gold</button>
+          </div>
+        </div>`;
+      document.getElementById('openMineBtn').disabled = state.gold < MINE_COST || state.dead;
+    } else {
+      mineSection.innerHTML = '';
+    }
+  } else if (state.mineCollapsed) {
+    const intactCount = state.mineNodes.filter(n => n.status === 'intact').length;
+    mineSection.innerHTML = `
+      <div class="panel">
+        <div class="panel-title"><span class="panel-icon">⛏️</span> The Mine — Collapsed</div>
+        <div class="mine-grid" id="mineGrid"></div>
+        <div class="mine-collapsed-msg">${intactCount > 0 ? `${intactCount} node${intactCount !== 1 ? 's' : ''} recovered.` : 'All veins still recovering.'} Pay 100g to reopen.</div>
+        <button class="mine-btn open" id="openMineBtn" onclick="openMine()">Reopen Mine — 100 Gold</button>
+      </div>`;
+    document.getElementById('openMineBtn').disabled = state.gold < MINE_COST || state.dead;
+    renderMineGrid();
+  } else {
+    // Mine is open and owned
+    const intactCount = state.mineNodes.filter(n => n.status === 'intact').length;
+    mineSection.innerHTML = `
+      <div class="panel">
+        <div class="panel-title"><span class="panel-icon">⛏️</span> The Mine</div>
+        <div class="mine-grid" id="mineGrid"></div>
+        <button class="mine-btn dig" id="digBtn" onclick="digStone()">
+          Dig Stone — 5 AP → 1 Stone${intactCount === 0 ? ' (depleted)' : ''}
+        </button>
+      </div>`;
+    document.getElementById('digBtn').disabled = state.ap < MINE_AP_COST || intactCount === 0 || state.dead;
+    renderMineGrid();
+  }
+
+  // Stone & geode sell buttons visibility
+  sSbtn.style.display = mineEverSeen ? '' : 'none';
+  sGbtn.style.display = mineEverSeen ? '' : 'none';
+
+  // ── Event banner ────────────────────────────────
+  const banner = document.getElementById('eventBanner');
+  if (state.activeEvent) {
+    const ev = state.activeEvent;
+    banner.className = `event-banner visible ${ev.tone}`;
+    document.getElementById('eventTitle').textContent = ev.title;
+    document.getElementById('eventDesc').textContent = ev.desc;
+    document.getElementById('eventDuration').textContent =
+      ev.daysLeft === 1 ? 'last day' : `${ev.daysLeft} days remaining`;
+    const fx = document.getElementById('eventEffects');
+    fx.innerHTML = '';
+    ev.tags.forEach(t => {
+      const span = document.createElement('span');
+      span.className = `effect-tag ${t.cls}`;
+      span.textContent = t.label;
+      fx.appendChild(span);
+    });
+  } else {
+    banner.className = 'event-banner';
+  }
+
+  // End day button
+  document.getElementById('endDayBtn').disabled = state.dead;
+
+  // Warning
+  const warn = document.getElementById('warningStrip');
+  const foodCostToday = effectiveFoodCost(1);
+  if (state.food === 0 && !state.dead) {
+    warn.textContent = '⚠ You have no food — end the day and you will starve.';
+    warn.className = 'warning-strip visible';
+  } else if (state.food === 1 && state.wood === 0 && state.gold < foodCostToday) {
+    warn.textContent = '⚠ One more day without food money means death. Chop and sell.';
+    warn.className = 'warning-strip visible';
+  } else if (state.ap < chopCost && standingCount > 0 && state.wood === 0 && state.gold < foodCostToday) {
+    warn.textContent = '⚠ Too few actions remain to chop. Consider resting and hoping the trees hold.';
+    warn.className = 'warning-strip visible';
+  } else {
+    warn.className = 'warning-strip';
+  }
+}
+
+// ═══════════════════════════════
+//  OVERLAY
+// ═══════════════════════════════
+
+function showOverlay(won, msg) {
+  const box = document.getElementById('overlayBox');
+  const title = document.getElementById('overlayTitle');
+  const msgEl = document.getElementById('overlayMsg');
+
+  if (won) {
+    box.className = 'overlay-box win';
+    title.textContent = 'You Survived';
+    title.style.color = 'var(--gold-bright)';
+  } else {
+    box.className = 'overlay-box';
+    title.textContent = 'You Have Perished';
+    title.style.color = 'var(--blood-bright)';
+  }
+
+  msgEl.textContent = msg;
+  document.getElementById('overlay').className = 'overlay active';
+}
+
+function restartGame() {
+  document.getElementById('overlay').className = 'overlay';
+  newGame();
+}
+
+// ═══════════════════════════════
+//  LOG
+// ═══════════════════════════════
+
+function log(msg, cls) {
+  const panel = document.getElementById('logPanel');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry' + (cls ? ' ' + cls : '');
+  entry.textContent = `Day ${state.day} — ${msg}`;
+  panel.insertBefore(entry, panel.firstChild);
+}
+
+function clearLog() {
+  document.getElementById('logPanel').innerHTML = '';
+}
+
+// ═══════════════════════════════
+//  BOOT
+// ═══════════════════════════════
+newGame();
+</script>
+</body>
+</html>
