@@ -1004,6 +1004,11 @@
       <span class="stat-sub" id="foodSub">day supply</span>
       <div class="progress-bar"><div class="progress-fill" id="foodBar" style="width:14%"></div></div>
     </div>
+    <div class="stat-box" id="seasonBox">
+      <span class="stat-label">Season</span>
+      <span class="stat-value" id="seasonVal">Winter</span>
+      <span class="stat-sub">cycles every 120 days</span>
+    </div>
   </div>
 
   <!-- ACTIONS -->
@@ -1198,6 +1203,62 @@ const SMELT_OUTCOMES = [
 const WORKER_COST         = 250;
 const WORKER_UPGRADE_COST = 250;
 const WORKER_MAX_LEVEL    = 3;
+
+// ═══════════════════════════════
+//  SEASONS
+//  120-day cycle: 30 days per season
+// ═══════════════════════════════
+const SEASON_CYCLE = 120;
+const SEASON_LENGTH = 30;
+const SEASONS = {
+  winter: {
+    name: 'Winter',
+    regrowMod: 1,
+    mineRegrowMod: 1,
+    foodPriceMult: 1.5,
+    metalRewardMult: 1,
+    geodeRewardMult: 1,
+    workerDeathChance: 0.1,
+    foodDropChance: 0,
+  },
+  spring: {
+    name: 'Spring',
+    regrowMod: 0,
+    mineRegrowMod: 0,
+    foodPriceMult: 0.75,
+    metalRewardMult: 1,
+    geodeRewardMult: 1,
+    workerDeathChance: 0,
+    foodDropChance: 0.1,
+  },
+  summer: {
+    name: 'Summer',
+    regrowMod: 0,
+    mineRegrowMod: 0,
+    foodPriceMult: 1,
+    metalRewardMult: 1.5,
+    geodeRewardMult: 1.5,
+    workerDeathChance: 0,
+    foodDropChance: 0,
+  },
+  fall: {
+    name: 'Fall',
+    regrowMod: 0,
+    mineRegrowMod: 0,
+    foodPriceMult: 1,
+    metalRewardMult: 1,
+    geodeRewardMult: 1,
+    workerDeathChance: 0,
+    foodDropChance: 0,
+  },
+};
+
+function getSeason() {
+  const dayInCycle = ((state.day - 1) % SEASON_CYCLE);
+  const seasonIndex = Math.floor(dayInCycle / SEASON_LENGTH);
+  const seasonKeys = ['winter', 'spring', 'summer', 'fall'];
+  return seasonKeys[seasonIndex];
+}
 // Tasks available per level (1-indexed)
 const WORKER_TASKS = {
   wood:  { label: 'Chop Wood',  minLevel: 1 },
@@ -1345,6 +1406,7 @@ function newGame() {
     buyOrders:        [],
     // Worker
     worker:           null,  // null | { level: 1-3, task: 'wood'|'stone' }
+    workerDeathDay:   null,  // null or the day the worker dies (predetermined on first day of winter)
   };
 
   for (let i = 0; i < TREE_COUNT; i++) {
@@ -1360,13 +1422,16 @@ function newGame() {
 // ── Modifier helpers ──────────────────────────────
 function mod() {
   const e = state.activeEvent;
+  const season = SEASONS[getSeason()];
   const baseAp = TOTAL_AP + (state.extraApUnlocked ? 1 : 0);
   return {
     woodPrice:  e?.effects?.woodPrice  ?? 1,
-    foodPrice:  e?.effects?.foodPrice  ?? 1,
+    foodPrice:  (e?.effects?.foodPrice ?? 1) * season.foodPriceMult,
     chopCost:   e?.effects?.chopCost   ?? CHOP_COST,
     apMax:      e?.effects?.apMax != null ? e.effects.apMax + (state.extraApUnlocked ? 1 : 0) : baseAp,
-    regrowMod:  e?.effects?.regrowMod  ?? 0,
+    regrowMod:  (e?.effects?.regrowMod ?? 0) + season.regrowMod,
+    metalRewardMult: season.metalRewardMult,
+    geodeRewardMult: season.geodeRewardMult,
   };
 }
 
@@ -1382,8 +1447,8 @@ function effectiveFoodCost(days) {
 
 function effectiveGeodeValue(tierIdx) {
   const base = GEODE_TIERS[tierIdx].value;
-  // geode prices boosted by merchant event, crushed by blight
-  return Math.max(1, Math.round(base * mod().woodPrice)); // reuse woodPrice multiplier for now
+  // geode prices boosted by merchant event, crushed by blight, and by summer season
+  return Math.max(1, Math.round(base * mod().woodPrice * mod().geodeRewardMult));
 }
 
 function rollGeodeTier() {
@@ -1449,11 +1514,12 @@ function smeltStone() {
 function sellMetal(type) {
   if (state.metals[type] < 1 || state.ap < MARKET_AP_COST || !state.buyOrders.includes(type) || state.dead) return;
   state.metals[type]--;
-  state.gold += METALS[type].value;
+  const value = Math.max(1, Math.round(METALS[type].value * mod().metalRewardMult));
+  state.gold += value;
   state.ap   -= MARKET_AP_COST;
   document.getElementById('goldVal').classList.add('spinning');
   setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
-  log(`Sold 1 ${METALS[type].label} for ${METALS[type].value} gold.`, 'good');
+  log(`Sold 1 ${METALS[type].label} for ${value} gold.`, 'good');
   render();
 }
 
@@ -1522,7 +1588,9 @@ function workerAct() {
       return;
     }
     const node = intact[Math.floor(Math.random() * intact.length)];
-    node.regenIn = Math.floor(Math.random() * 5) + 3;
+    const baseRegenDays = Math.floor(Math.random() * 5) + 3;
+    const season = SEASONS[getSeason()];
+    node.regenIn = Math.max(1, baseRegenDays + season.mineRegrowMod);
     node.status = 'regen';
     state.stone += 1;
     // Check collapse
@@ -1605,7 +1673,9 @@ function digStone() {
   if (intact.length === 0) return;
 
   const node = intact[Math.floor(Math.random() * intact.length)];
-  node.regenIn = Math.floor(Math.random() * 5) + 4; // 4-8 days
+  const baseRegenDays = Math.floor(Math.random() * 5) + 4; // 4-8 days
+  const season = SEASONS[getSeason()];
+  node.regenIn = Math.max(1, baseRegenDays + season.mineRegrowMod);
 
   const nodeEl = document.getElementById('mineNode-' + node.id);
   if (nodeEl) {
@@ -1707,7 +1777,15 @@ function chopWood() {
 
   state.ap -= chopCost;
   state.wood += 1;
-  log(`Chopped a tree — gained 1 log. It will regrow in ${tree.regrowIn} days.`);
+  let logMsg = `Chopped a tree — gained 1 log. It will regrow in ${tree.regrowIn} days.`;
+  
+  // Spring: 10% chance tree drops food
+  if (getSeason() === 'spring' && Math.random() < SEASONS.spring.foodDropChance) {
+    state.food += 1;
+    logMsg += ` A ripe fruit fell — gained 1 food!`;
+  }
+  
+  log(logMsg);
   render();
 }
 
@@ -1740,6 +1818,25 @@ function buyFood(days) {
 
 function endDay() {
   if (state.dead) return;
+
+  // ── Winter worker death determination ──────────────────────────────
+  // On first day of winter, if worker alive, decide if they'll die
+  if (getSeason() === 'winter' && (state.day - 1) % SEASON_CYCLE === 0) {
+    if (state.worker && Math.random() < SEASONS.winter.workerDeathChance) {
+      // Roll a random day 1-30 within this winter for when they die
+      state.workerDeathDay = state.day + Math.floor(Math.random() * SEASON_LENGTH);
+      log(`An icy wind whispers of hardship. Your worker will not survive the winter...`, 'bad');
+    } else {
+      state.workerDeathDay = null; // Worker survives this winter
+    }
+  }
+
+  // If today is the predetermined death day, the worker dies
+  if (state.workerDeathDay === state.day && state.worker) {
+    log('The bitter winter claims your worker\'s life. You recover the body at dawn.', 'bad');
+    state.worker = null;
+    state.workerDeathDay = null;
+  }
 
   // ── Food resolution ──────────────────────────────
   if (state.food === 0) {
@@ -1813,7 +1910,7 @@ function endDay() {
   state.ap = mod().apMax;
   rollBuyOrders();
 
-  let msg = `Day ${state.day} begins. Consumed ${state.worker ? '2 food (you + worker)' : '1 food'} — ${state.food} days remain.`;
+  let msg = `Day ${state.day} begins (${SEASONS[getSeason()].name}). Consumed ${state.worker ? '2 food (you + worker)' : '1 food'} — ${state.food} days remain.`;
   if (regrew > 0) msg += ` ${regrew} tree${regrew > 1 ? 's' : ''} regrew overnight.`;
   if (state.activeEvent) msg += ` ⚑ ${state.activeEvent.title}.`;
   if (state.extraApUnlocked) {
@@ -1838,6 +1935,7 @@ function endDay() {
 function render() {
   // Day
   document.getElementById('dayVal').textContent = state.day;
+  document.getElementById('seasonVal').textContent = SEASONS[getSeason()].name;
 
   // Gold
   const goldEl = document.getElementById('goldVal');
