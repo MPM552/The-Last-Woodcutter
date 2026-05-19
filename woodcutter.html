@@ -409,6 +409,94 @@
     cursor: not-allowed;
   }
 
+  /* ── AP UPGRADE ── */
+  .ap-upgrade {
+    margin-top: 10px;
+    padding: 9px 14px;
+    background: rgba(201,147,42,0.08);
+    border: 1px solid var(--gold-dim);
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .ap-upgrade-label {
+    font-size: 0.8rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .ap-upgrade-label strong { color: var(--gold-bright); font-style: normal; }
+  .ap-upgrade-btn {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    background: linear-gradient(135deg, var(--gold-dim) 0%, #9a7a2a 100%);
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .ap-upgrade-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #9a7a2a 0%, var(--gold) 100%);
+    box-shadow: 0 0 10px rgba(201,147,42,0.3);
+  }
+  .ap-upgrade-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .ap-unlocked-badge {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: #88cc66;
+    font-style: italic;
+    text-align: center;
+    padding: 5px 0;
+  }
+
+  /* ── SMELT FLASH ── */
+  .smelt-flash {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bark-light);
+    border: 2px solid #888;
+    border-radius: 4px;
+    padding: 14px 26px;
+    text-align: center;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    min-width: 180px;
+  }
+  .smelt-flash.show { opacity: 1; }
+  .smelt-flash-icon { font-size: 1.8rem; display: block; margin-bottom: 3px; }
+  .smelt-flash-text { font-family: 'Cinzel Decorative', serif; font-size: 0.7rem; letter-spacing: 0.08em; }
+  .smelt-flash.iron     { border-color: #9a8878; }
+  .smelt-flash.iron     .smelt-flash-text { color: #c8b8a8; }
+  .smelt-flash.aluminum { border-color: #a0b8c8; }
+  .smelt-flash.aluminum .smelt-flash-text { color: #b8d0e0; }
+  .smelt-flash.copper   { border-color: #c87840; }
+  .smelt-flash.copper   .smelt-flash-text { color: #e09858; }
+  .smelt-flash.nothing  { border-color: var(--bark-mid); }
+  .smelt-flash.nothing  .smelt-flash-text { color: var(--parchment-dim); }
+
+  /* ── DEMAND BADGE ── */
+  .demand-badge {
+    font-size: 0.65rem;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+    vertical-align: middle;
+    font-style: normal;
+  }
+  .demand-badge.active   { background: rgba(136,204,102,0.2); border: 1px solid #88cc66; color: #88cc66; }
+  .demand-badge.inactive { background: rgba(139,26,26,0.2);   border: 1px solid var(--blood); color: var(--blood-bright); }
+
   .geode-flash {
     position: fixed;
     top: 50%;
@@ -814,6 +902,7 @@
   <div class="actions-section">
     <div class="section-title">Action Points — Day's Allowance</div>
     <div class="ap-pips" id="apPips"></div>
+    <div id="apUpgradeSection"></div>
   </div>
 
   <div id="warningStrip" class="warning-strip"></div>
@@ -862,6 +951,18 @@
           <span class="inv-name">Geodes</span>
           <span class="inv-amount" id="geodeVal">0</span>
         </div>
+        <div class="inv-row" id="invIronRow" style="display:none">
+          <span class="inv-name">Iron</span>
+          <span class="inv-amount" id="ironVal">0</span>
+        </div>
+        <div class="inv-row" id="invAlumRow" style="display:none">
+          <span class="inv-name">Aluminum</span>
+          <span class="inv-amount" id="alumVal">0</span>
+        </div>
+        <div class="inv-row" id="invCopRow" style="display:none">
+          <span class="inv-name">Copper</span>
+          <span class="inv-amount" id="copVal">0</span>
+        </div>
         <div class="inv-row">
           <span class="inv-name">Stockpiled Food</span>
           <span class="inv-amount" id="invFoodVal">0</span>
@@ -891,6 +992,19 @@
           <span class="btn-cost" id="sellGeodeCost">+? gold · 1 AP</span>
         </button>
 
+        <button class="action-btn sell" id="sellIronBtn" onclick="sellMetal('iron')" style="display:none">
+          <span>Sell Iron <span class="demand-badge" id="ironDemand"></span></span>
+          <span class="btn-cost">+25 gold · 1 AP</span>
+        </button>
+        <button class="action-btn sell" id="sellAlumBtn" onclick="sellMetal('aluminum')" style="display:none">
+          <span>Sell Aluminum <span class="demand-badge" id="alumDemand"></span></span>
+          <span class="btn-cost">+50 gold · 1 AP</span>
+        </button>
+        <button class="action-btn sell" id="sellCopBtn" onclick="sellMetal('copper')" style="display:none">
+          <span>Sell Copper <span class="demand-badge" id="copDemand"></span></span>
+          <span class="btn-cost">+100 gold · 1 AP</span>
+        </button>
+
         <button class="action-btn buy" id="buyDayBtn" onclick="buyFood(1)">
           <span>Buy Food (1 day)</span>
           <span class="btn-cost">5 gold · 1 AP</span>
@@ -911,6 +1025,11 @@
     <span class="geode-flash-icon" id="geodeFlashIcon">💎</span>
     <div class="geode-flash-text" id="geodeFlashText">Geode Found!</div>
     <div class="geode-flash-val" id="geodeFlashVal"></div>
+  </div>
+
+  <div class="smelt-flash" id="smeltFlash">
+    <span class="smelt-flash-icon" id="smeltFlashIcon"></span>
+    <div class="smelt-flash-text" id="smeltFlashText"></div>
   </div>
 
   <!-- END DAY -->
@@ -952,6 +1071,22 @@ const GEODE_TIERS = [
   { label: 'Common Geode',   icon: '🪨', value: 10, weight: 6 },
   { label: 'Smooth Geode',   icon: '🔵', value: 25, weight: 3 },
   { label: 'Rare Crystal',   icon: '💎', value: 50, weight: 1 },
+];
+
+const EXTRA_AP_COST  = 500;
+const SMELT_AP_COST  = 3;
+const SMELT_STONE_COST = 1;
+const SMELT_GOLD_COST  = 10;
+const METALS = {
+  iron:     { label: 'Iron',     icon: '🔩', value: 25  },
+  aluminum: { label: 'Aluminum', icon: '🪙', value: 50  },
+  copper:   { label: 'Copper',   icon: '🟤', value: 100 },
+};
+const SMELT_OUTCOMES = [
+  { result: null,       chance: 0.20 },
+  { result: 'iron',     chance: 0.45 },
+  { result: 'aluminum', chance: 0.30 },
+  { result: 'copper',   chance: 0.05 },
 ];
 
 // ═══════════════════════════════
@@ -1084,11 +1219,15 @@ function newGame() {
     activeEvent: null,
     eventCooldown: 0,
     // Mine
-    mineOwned:     false,
-    mineCollapsed: false,
-    mineNodes:     [],   // each: { id, status: 'intact'|'empty'|'regen', regenIn: 0 }
-    stone:         0,
-    geodes:        [],   // array of { tier index }
+    mineOwned:        false,
+    mineCollapsed:    false,
+    mineNodes:        [],
+    stone:            0,
+    geodes:           [],
+    // Smelting & AP upgrade
+    extraApUnlocked:  false,
+    metals:           { iron: 0, aluminum: 0, copper: 0 },
+    buyOrders:        [],
   };
 
   for (let i = 0; i < TREE_COUNT; i++) {
@@ -1096,19 +1235,20 @@ function newGame() {
   }
 
   clearLog();
+  rollBuyOrders();
   log('You wake with 5 gold and one day\'s food. The forest awaits.', 'day');
   render();
 }
 
 // ── Modifier helpers ──────────────────────────────
 function mod() {
-  // Returns effective modifiers from active event (or defaults)
   const e = state.activeEvent;
+  const baseAp = TOTAL_AP + (state.extraApUnlocked ? 1 : 0);
   return {
     woodPrice:  e?.effects?.woodPrice  ?? 1,
     foodPrice:  e?.effects?.foodPrice  ?? 1,
     chopCost:   e?.effects?.chopCost   ?? CHOP_COST,
-    apMax:      e?.effects?.apMax      ?? TOTAL_AP,
+    apMax:      e?.effects?.apMax != null ? e.effects.apMax + (state.extraApUnlocked ? 1 : 0) : baseAp,
     regrowMod:  e?.effects?.regrowMod  ?? 0,
   };
 }
@@ -1144,6 +1284,60 @@ function initMineNodes() {
   for (let i = 0; i < MINE_NODE_COUNT; i++) {
     state.mineNodes.push({ id: i, status: 'intact', regenIn: 0 });
   }
+}
+
+// Weekend = day divisible by 6 or 7 → two buy orders; otherwise one
+function rollBuyOrders() {
+  const allMetals = Object.keys(METALS);
+  const isWeekend = (state.day % 6 === 0 || state.day % 7 === 0);
+  const count = isWeekend ? 2 : 1;
+  const shuffled = [...allMetals].sort(() => Math.random() - 0.5);
+  state.buyOrders = shuffled.slice(0, count);
+}
+
+function showSmeltFlash(result) {
+  const el = document.getElementById('smeltFlash');
+  el.className = 'smelt-flash show ' + (result || 'nothing');
+  document.getElementById('smeltFlashIcon').textContent = result ? METALS[result].icon : '💨';
+  document.getElementById('smeltFlashText').textContent = result ? METALS[result].label + ' smelted!' : 'Stone crumbled to ash.';
+  setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function buyExtraAp() {
+  if (state.extraApUnlocked || state.gold < EXTRA_AP_COST || !state.mineOwned || state.dead) return;
+  state.gold -= EXTRA_AP_COST;
+  state.extraApUnlocked = true;
+  state.ap = Math.min(state.ap + 1, mod().apMax);
+  log(`Purchased a permanent extra Action Point for ${EXTRA_AP_COST} gold. The forge awakens.`, 'good');
+  render();
+}
+
+function smeltStone() {
+  if (!state.extraApUnlocked || state.stone < SMELT_STONE_COST || state.gold < SMELT_GOLD_COST || state.ap < SMELT_AP_COST || state.dead) return;
+  state.stone -= SMELT_STONE_COST;
+  state.gold  -= SMELT_GOLD_COST;
+  state.ap    -= SMELT_AP_COST;
+  let r = Math.random(), result = null;
+  for (const o of SMELT_OUTCOMES) { r -= o.chance; if (r <= 0) { result = o.result; break; } }
+  if (result) {
+    state.metals[result]++;
+    log(`Smelted 1 stone → ${METALS[result].label}! (−${SMELT_GOLD_COST}g)`, 'good');
+  } else {
+    log(`Smelted 1 stone → nothing but ash. (−${SMELT_GOLD_COST}g)`);
+  }
+  showSmeltFlash(result);
+  render();
+}
+
+function sellMetal(type) {
+  if (state.metals[type] < 1 || state.ap < MARKET_AP_COST || !state.buyOrders.includes(type) || state.dead) return;
+  state.metals[type]--;
+  state.gold += METALS[type].value;
+  state.ap   -= MARKET_AP_COST;
+  document.getElementById('goldVal').classList.add('spinning');
+  setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
+  log(`Sold 1 ${METALS[type].label} for ${METALS[type].value} gold.`, 'good');
+  render();
 }
 
 // ── Mine event overlay flash ──────────────────────
@@ -1413,12 +1607,16 @@ function endDay() {
   rollEvent();
 
   state.day++;
-  // AP respects event modifier
   state.ap = mod().apMax;
+  rollBuyOrders();
 
   let msg = `Day ${state.day} begins. Consumed 1 food — ${state.food} days remain.`;
   if (regrew > 0) msg += ` ${regrew} tree${regrew > 1 ? 's' : ''} regrew overnight.`;
   if (state.activeEvent) msg += ` ⚑ ${state.activeEvent.title}.`;
+  if (state.extraApUnlocked) {
+    const isWeekend = state.day % 6 === 0 || state.day % 7 === 0;
+    msg += ` Orders: ${state.buyOrders.map(k => METALS[k].label).join(' & ')}${isWeekend ? ' (weekend)' : ''}.`;
+  }
   log(msg, 'day');
 
   // Win condition — survive 100 years (36,475 days)
@@ -1568,6 +1766,12 @@ function render() {
   } else {
     // Mine is open and owned
     const intactCount = state.mineNodes.filter(n => n.status === 'intact').length;
+    const smeltBtn = state.extraApUnlocked
+      ? `<button class="mine-btn dig" id="smeltBtn" onclick="smeltStone()"
+           style="margin-top:6px;border-color:#888;background:linear-gradient(135deg,#2a2a2a 0%,#3a3a3a 100%)">
+           Smelt Stone — 3 AP + 10g → Metal
+         </button>`
+      : '';
     mineSection.innerHTML = `
       <div class="panel">
         <div class="panel-title"><span class="panel-icon">⛏️</span> The Mine</div>
@@ -1575,14 +1779,53 @@ function render() {
         <button class="mine-btn dig" id="digBtn" onclick="digStone()">
           Dig Stone — 5 AP → 1 Stone${intactCount === 0 ? ' (depleted)' : ''}
         </button>
+        ${smeltBtn}
       </div>`;
     document.getElementById('digBtn').disabled = state.ap < MINE_AP_COST || intactCount === 0 || state.dead;
+    if (state.extraApUnlocked) {
+      document.getElementById('smeltBtn').disabled =
+        state.stone < SMELT_STONE_COST || state.gold < SMELT_GOLD_COST || state.ap < SMELT_AP_COST || state.dead;
+    }
     renderMineGrid();
   }
 
   // Stone & geode sell buttons visibility
   sSbtn.style.display = mineEverSeen ? '' : 'none';
   sGbtn.style.display = mineEverSeen ? '' : 'none';
+
+  // ── AP upgrade section ───────────────────────────
+  const apSec = document.getElementById('apUpgradeSection');
+  if (state.extraApUnlocked) {
+    apSec.innerHTML = `<div class="ap-unlocked-badge">✦ Extra Action Point unlocked — Forge active</div>`;
+  } else if (state.mineOwned && state.gold >= 200) {
+    apSec.innerHTML = `
+      <div class="ap-upgrade">
+        <span class="ap-upgrade-label">A <strong>permanent extra Action Point</strong> can be purchased — and unlocks the Forge.</span>
+        <button class="ap-upgrade-btn" id="apUpgradeBtn" onclick="buyExtraAp()">500 Gold</button>
+      </div>`;
+    document.getElementById('apUpgradeBtn').disabled = state.gold < EXTRA_AP_COST || state.dead;
+  } else {
+    apSec.innerHTML = '';
+  }
+
+  // ── Metal sell buttons ───────────────────────────
+  const smeltUnlocked = state.extraApUnlocked;
+  const metalDefs = [
+    { key: 'iron',     btnId: 'sellIronBtn', badgeId: 'ironDemand', rowId: 'invIronRow', valId: 'ironVal' },
+    { key: 'aluminum', btnId: 'sellAlumBtn', badgeId: 'alumDemand', rowId: 'invAlumRow', valId: 'alumVal' },
+    { key: 'copper',   btnId: 'sellCopBtn',  badgeId: 'copDemand',  rowId: 'invCopRow',  valId: 'copVal'  },
+  ];
+  metalDefs.forEach(({ key, btnId, badgeId, rowId, valId }) => {
+    const hasMetal = state.metals[key] > 0;
+    const inDemand = state.buyOrders.includes(key);
+    document.getElementById(valId).textContent  = state.metals[key];
+    document.getElementById(rowId).style.display = smeltUnlocked ? '' : 'none';
+    document.getElementById(btnId).style.display = smeltUnlocked ? '' : 'none';
+    const badge = document.getElementById(badgeId);
+    badge.textContent = inDemand ? 'in demand' : 'no orders';
+    badge.className   = 'demand-badge ' + (inDemand ? 'active' : 'inactive');
+    document.getElementById(btnId).disabled = !hasMetal || !inDemand || state.ap < MARKET_AP_COST || state.dead;
+  });
 
   // ── Event banner ────────────────────────────────
   const banner = document.getElementById('eventBanner');
