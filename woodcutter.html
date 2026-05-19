@@ -940,9 +940,10 @@
 // ═══════════════════════════════
 //  GAME STATE
 // ═══════════════════════════════
-const TOTAL_AP = 8;
+const TOTAL_AP = 9;
 const CHOP_COST = 3;
 const MARKET_AP_COST = 1;
+const MARKET_AP_COST_BULK = 2;
 const WOOD_VALUE = 5;
 const WOOD_BULK_COUNT = 5;
 const WOOD_BULK_VALUE = 30;
@@ -1257,11 +1258,11 @@ function digStone() {
 }
 
 function sellStone() {
-  if (state.stone < 2 || state.ap < MARKET_AP_COST) return;
+  if (state.stone < 2 || state.ap < MARKET_AP_COST_BULK) return;
   const val = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
   state.stone -= 2;
   state.gold += val;
-  state.ap -= MARKET_AP_COST;
+  state.ap -= MARKET_AP_COST_BULK;
   document.getElementById('goldVal').classList.add('spinning');
   setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
   log(`Sold 2 stone for ${val} gold. Total: ${state.gold} gold.`, 'good');
@@ -1347,11 +1348,11 @@ function sellWood() {
 }
 
 function sellWoodBulk() {
-  if (state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST) return;
+  if (state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST_BULK) return;
   const val = effectiveWoodValue(true);
   state.wood -= WOOD_BULK_COUNT;
   state.gold += val;
-  state.ap -= MARKET_AP_COST;
+  state.ap -= MARKET_AP_COST_BULK;
 
   const el = document.getElementById('goldVal');
   el.classList.add('spinning');
@@ -1362,10 +1363,14 @@ function sellWoodBulk() {
 
 function buyFood(days) {
   const cost = effectiveFoodCost(days);
-  if (state.gold < cost || state.ap < MARKET_AP_COST) return;
+  let ap_cost = MARKET_AP_COST
+  if(days === FOOD_WEEK_DAYS){
+    ap_cost = MARKET_AP_COST_BULK;
+  };
+  if (state.gold < cost || state.ap < ap_cost) return;
   state.gold -= cost;
   state.food += days;
-  state.ap -= MARKET_AP_COST;
+  state.ap -= ap_cost;
   log(`Bought ${days === 1 ? 'one day\'s' : 'a week\'s'} worth of food for ${cost} gold.`);
   render();
 }
@@ -1523,24 +1528,24 @@ function render() {
   const fd1btn = document.getElementById('buyDayBtn');
   const fd7btn = document.getElementById('buyWeekBtn');
   s1btn.querySelector('.btn-cost').textContent  = `+${sv1} gold · 1 AP`;
-  sBbtn.querySelector('.btn-cost').textContent  = `+${svB} gold · 1 AP`;
+  sBbtn.querySelector('.btn-cost').textContent  = `+${svB} gold · 2 AP`;
   fd1btn.querySelector('.btn-cost').textContent = `${fc1} gold · 1 AP`;
-  fd7btn.querySelector('.btn-cost').textContent = `${fc7} gold · 1 AP`;
+  fd7btn.querySelector('.btn-cost').textContent = `${fc7} gold · 2 AP`;
   s1btn.disabled  = state.wood < 1 || state.ap < MARKET_AP_COST || state.dead;
-  sBbtn.disabled  = state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST || state.dead;
+  sBbtn.disabled  = state.wood < WOOD_BULK_COUNT || state.ap < MARKET_AP_COST_BULK || state.dead;
   fd1btn.disabled = state.gold < fc1 || state.ap < MARKET_AP_COST || state.dead;
-  fd7btn.disabled = state.gold < fc7 || state.ap < MARKET_AP_COST || state.dead;
+  fd7btn.disabled = state.gold < fc7 || state.ap < MARKET_AP_COST_BULK || state.dead;
 
   // Stone & geode sell buttons
   const stoneVal = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
   const sSbtn  = document.getElementById('sellStoneBtn');
   const sGbtn  = document.getElementById('sellGeodeBtn');
-  sSbtn.querySelector('#sellStoneCost').textContent = `+${stoneVal} gold · 1 AP`;
+  sSbtn.querySelector('#sellStoneCost').textContent = `+${stoneVal} gold · 2 AP`;
   const nextGeode = state.geodes[0];
   sGbtn.querySelector('#sellGeodeCost').textContent = nextGeode
     ? `+${effectiveGeodeValue(nextGeode.tierIdx)} gold · 1 AP (${GEODE_TIERS[nextGeode.tierIdx].label})`
     : '+? gold · 1 AP';
-  sSbtn.disabled = state.stone < 2 || state.ap < MARKET_AP_COST || state.dead;
+  sSbtn.disabled = state.stone < 2 || state.ap < MARKET_AP_COST_BULK || state.dead;
   sGbtn.disabled = state.geodes.length === 0 || state.ap < MARKET_AP_COST || state.dead;
 
   // ── Mine panel ──────────────────────────────────
