@@ -1421,10 +1421,10 @@ function endDay() {
   if (state.activeEvent) msg += ` ⚑ ${state.activeEvent.title}.`;
   log(msg, 'day');
 
-  // Win condition — survive 30 days
-  if (state.day > 30) {
+  // Win condition — survive 100 years (36,475 days)
+  if (state.day > 36475) {
     state.won = true;
-    showOverlay(true, `You survived 30 days in the forest with ${state.gold} gold.`);
+    showOverlay(true, `You survived 100 years in the forest with ${state.gold} gold.`);
   }
 
   render();
