@@ -476,6 +476,8 @@
   .smelt-flash.aluminum .smelt-flash-text { color: #b8d0e0; }
   .smelt-flash.copper   { border-color: #c87840; }
   .smelt-flash.copper   .smelt-flash-text { color: #e09858; }
+  .smelt-flash.silver   { border-color: #c0c8d8; }
+  .smelt-flash.silver   .smelt-flash-text { color: #e0e8f8; }
   .smelt-flash.nothing  { border-color: var(--bark-mid); }
   .smelt-flash.nothing  .smelt-flash-text { color: var(--parchment-dim); }
 
@@ -1057,8 +1059,8 @@
   <!-- STATUS -->
   <div class="status-bar">
     <div class="stat-box" id="dayBox">
-      <span class="stat-label">Day</span>
-      <span class="stat-value" id="dayVal">1</span>
+      <span class="stat-label">Date</span>
+      <span class="stat-value" id="dayVal" style="font-size:0.85rem">1</span>
     </div>
     <div class="stat-box" id="goldBox">
       <span class="stat-label">Gold</span>
@@ -1112,9 +1114,10 @@
 
     </div>
 
-    <!-- MIDDLE: Worker + Seller + Tools -->
+    <!-- MIDDLE: Worker + Worker2 + Seller + Tools -->
     <div style="display:flex; flex-direction:column; gap:12px;">
       <div id="workerSection"></div>
+      <div id="worker2Section"></div>
       <div id="sellerSection"></div>
       <div id="toolsSection"></div>
     </div>
@@ -1147,6 +1150,10 @@
         <div class="inv-row" id="invCopRow" style="display:none">
           <span class="inv-name">Copper</span>
           <span class="inv-amount" id="copVal">0</span>
+        </div>
+        <div class="inv-row" id="invSilverRow" style="display:none">
+          <span class="inv-name" style="color:#c0d0e8">Silver</span>
+          <span class="inv-amount" id="silverVal">0</span>
         </div>
         <div class="inv-row">
           <span class="inv-name">Stockpiled Food</span>
@@ -1183,6 +1190,10 @@
         <button class="action-btn sell" id="sellCopBtn" onclick="sellMetal('copper')" style="display:none">
           <span>Sell Copper <span class="demand-badge" id="copDemand"></span></span>
           <span class="btn-cost">+100 gold · 1 AP</span>
+        </button>
+        <button class="action-btn sell" id="sellSilverBtn" onclick="sellMetal('silver')" style="display:none">
+          <span>Sell Silver <span class="demand-badge" id="silverDemand"></span></span>
+          <span class="btn-cost">+500 gold · 1 AP</span>
         </button>
 
         <button class="action-btn buy" id="buyDayBtn" onclick="buyFood(1)">
@@ -1254,20 +1265,33 @@ const SMELT_AP_COST  = 3;
 const SMELT_STONE_COST = 1;
 const SMELT_GOLD_COST  = 10;
 const METALS = {
-  iron:     { label: 'Iron',     icon: '🔩', value: 25  },
-  aluminum: { label: 'Aluminum', icon: '🪙', value: 50  },
-  copper:   { label: 'Copper',   icon: '🟤', value: 100 },
+  iron:     { label: 'Iron',     icon: '🔩', value: 25,  alwaysDemand: false },
+  aluminum: { label: 'Aluminum', icon: '🪙', value: 50,  alwaysDemand: false },
+  copper:   { label: 'Copper',   icon: '🟤', value: 100, alwaysDemand: false },
+  silver:   { label: 'Silver',   icon: '🥈', value: 500, alwaysDemand: true  },
 };
-const SMELT_OUTCOMES = [
+// Base smelt table (no pickaxe)
+const SMELT_OUTCOMES_BASE = [
   { result: null,       chance: 0.20 },
   { result: 'iron',     chance: 0.45 },
   { result: 'aluminum', chance: 0.30 },
   { result: 'copper',   chance: 0.05 },
 ];
+// With pickaxe: copper drops 1%, silver gets 1%
+const SMELT_OUTCOMES_PICKAXE = [
+  { result: null,       chance: 0.20 },
+  { result: 'iron',     chance: 0.45 },
+  { result: 'aluminum', chance: 0.30 },
+  { result: 'copper',   chance: 0.04 },
+  { result: 'silver',   chance: 0.01 },
+];
 
-const WORKER_COST         = 250;
-const WORKER_UPGRADE_COST = 250;
-const WORKER_MAX_LEVEL    = 3;
+const WORKER_COST          = 250;
+const WORKER_UPGRADE_COST  = 250;
+const WORKER_MAX_LEVEL     = 3;
+const WORKER2_COST         = 500;
+const WORKER2_UPGRADE_COST = 500;
+const WORKER2_MAX_LEVEL    = 3;
 
 const SELLER_COST         = 500;
 const SELLER_UPGRADE_COST = 400;
@@ -1481,19 +1505,24 @@ function newGame() {
     geodes:           [],
     // Smelting & AP upgrade
     extraApUnlocked:  false,
-    metals:           { iron: 0, aluminum: 0, copper: 0 },
+    metals:           { iron: 0, aluminum: 0, copper: 0, silver: 0 },
     buyOrders:        [],
     // Worker
     worker:           null,  // null | { level: 1-3, task: 'wood'|'stone' }
     workerDeathDay:   null,
+    worker2:          null,  // second worker, double costs
+    worker2DeathDay:  null,
     // Seller
     seller:           null,  // null | { level: 1-3 }
+    sellerDeathDay:   null,
     // Tools
     axe:              false,
     pickaxe:          false,
-    // Upgrades
-    forestRows:       2,   // starts at 2 rows (10 trees), max we'll leave open
-    mineRows:         2,   // starts at 2 rows (8 nodes)
+    // Upgrades (one row each, one-time)
+    forestUpgraded:   false,
+    mineUpgraded:     false,
+    forestRows:       2,
+    mineRows:         2,
   };
 
   for (let i = 0; i < state.forestRows * 5; i++) {
@@ -1559,12 +1588,21 @@ function initMineNodes() {
 }
 
 // Weekend = day divisible by 6 or 7 → two buy orders; otherwise one
+// Silver is always in demand if pickaxe is unlocked
 function rollBuyOrders() {
-  const allMetals = Object.keys(METALS);
+  const regularMetals = ['iron', 'aluminum', 'copper'];
   const isWeekend = (state.day % 6 === 0 || state.day % 7 === 0);
   const count = isWeekend ? 2 : 1;
-  const shuffled = [...allMetals].sort(() => Math.random() - 0.5);
+  const shuffled = [...regularMetals].sort(() => Math.random() - 0.5);
   state.buyOrders = shuffled.slice(0, count);
+  // Silver always has demand once pickaxe unlocked
+  if (state.pickaxe && !state.buyOrders.includes('silver')) {
+    state.buyOrders.push('silver');
+  }
+}
+
+function getSmeltOutcomes() {
+  return state.pickaxe ? SMELT_OUTCOMES_PICKAXE : SMELT_OUTCOMES_BASE;
 }
 
 function showSmeltFlash(result) {
@@ -1590,7 +1628,7 @@ function smeltStone() {
   state.gold  -= SMELT_GOLD_COST;
   state.ap    -= SMELT_AP_COST;
   let r = Math.random(), result = null;
-  for (const o of SMELT_OUTCOMES) { r -= o.chance; if (r <= 0) { result = o.result; break; } }
+  for (const o of getSmeltOutcomes()) { r -= o.chance; if (r <= 0) { result = o.result; break; } }
   if (result) {
     state.metals[result]++;
     log(`Smelted 1 stone → ${METALS[result].label}! (−${SMELT_GOLD_COST}g)`, 'good');
@@ -1602,7 +1640,9 @@ function smeltStone() {
 }
 
 function sellMetal(type) {
-  if (state.metals[type] < 1 || state.ap < MARKET_AP_COST || !state.buyOrders.includes(type) || state.dead) return;
+  if (state.metals[type] < 1 || state.ap < MARKET_AP_COST || state.dead) return;
+  const alwaysDemand = METALS[type].alwaysDemand;
+  if (!alwaysDemand && !state.buyOrders.includes(type)) return;
   state.metals[type]--;
   const value = Math.max(1, Math.round(METALS[type].value * mod().metalRewardMult));
   state.gold += value;
@@ -1650,49 +1690,61 @@ function setWorkerTask(task) {
 }
 
 // Called at end of each day — worker produces passively
-function workerAct() {
-  if (!state.worker) return;
-  const { task, level } = state.worker;
+function workerAct(workerKey) {
+  const w = state[workerKey];
+  if (!w) return;
+  const { task, level } = w;
 
   if (task === 'wood') {
     const standing = state.trees.filter(t => t.status === 'standing');
-    if (standing.length === 0) {
-      log('Worker found no trees to chop today.');
-      return;
-    }
+    if (standing.length === 0) { log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} found no trees to chop today.`); return; }
     const tree = standing[Math.floor(Math.random() * standing.length)];
     const baseRegrow = Math.floor(Math.random() * 4) + 2;
     tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
     tree.status = 'stump';
     state.wood += 1;
-    log(`Worker chopped 1 tree — +1 log. (${state.wood} logs total)`);
-
+    log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} chopped 1 tree — +1 log.`);
   } else if (task === 'stone') {
-    if (!state.mineOwned || state.mineCollapsed) {
-      log('Worker found the mine closed — no stone today.');
-      return;
-    }
+    if (!state.mineOwned || state.mineCollapsed) { log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} found the mine closed.`); return; }
     const intact = state.mineNodes.filter(n => n.status === 'intact');
-    if (intact.length === 0) {
-      log('Worker found no intact stone nodes today.');
-      return;
-    }
+    if (intact.length === 0) { log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} found no intact stone nodes.`); return; }
     const node = intact[Math.floor(Math.random() * intact.length)];
-    const baseRegenDays = Math.floor(Math.random() * 5) + 3;
-    const season = SEASONS[getSeason()];
-    node.regenIn = Math.max(1, baseRegenDays + season.mineRegrowMod);
+    node.regenIn = Math.max(1, Math.floor(Math.random() * 5) + 3 + SEASONS[getSeason()].mineRegrowMod);
     node.status = 'regen';
     state.stone += 1;
-    // Check collapse
     const anyIntact = state.mineNodes.some(n => n.status === 'intact');
-    if (!anyIntact) {
-      state.mineCollapsed = true;
-      state.mineOwned = false;
-      log('The mine has completely collapsed from worker digging. Pay 100g to reopen.', 'bad');
-    } else {
-      log(`Worker dug 1 stone — +1 stone. (${state.stone} stone total)`);
-    }
+    if (!anyIntact) { state.mineCollapsed = true; state.mineOwned = false; log('Mine collapsed from worker digging. Pay 100g to reopen.', 'bad'); }
+    else log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} dug 1 stone.`);
   }
+}
+
+// ═══════════════════════════════
+//  WORKER 2
+// ═══════════════════════════════
+
+function hireWorker2() {
+  if (state.worker2 || state.gold < WORKER2_COST || !state.worker || state.dead) return;
+  state.gold -= WORKER2_COST;
+  state.worker2 = { level: 1, task: 'wood' };
+  log(`Hired a second worker for ${WORKER2_COST} gold.`, 'good');
+  render();
+}
+
+function upgradeWorker2() {
+  if (!state.worker2 || state.worker2.level >= WORKER2_MAX_LEVEL || state.dead) return;
+  if (state.gold < WORKER2_UPGRADE_COST) return;
+  state.gold -= WORKER2_UPGRADE_COST;
+  state.worker2.level++;
+  log(`Worker 2 promoted to level ${state.worker2.level} for ${WORKER2_UPGRADE_COST} gold.`, 'good');
+  render();
+}
+
+function setWorker2Task(task) {
+  if (!state.worker2 || state.dead) return;
+  if (WORKER_TASKS[task].minLevel > state.worker2.level) return;
+  state.worker2.task = task;
+  log(`Worker 2 assigned to: ${WORKER_TASKS[task].label}.`);
+  render();
 }
 
 // ═══════════════════════════════
@@ -1722,22 +1774,30 @@ function sellerAct() {
   const { level } = state.seller;
   const m = mod();
 
-  // Level 3: try metals first (highest value, demand-gated)
+  // Level 3: sell the two most expensive metals held (at 90% of market value, always)
   if (level >= 3) {
-    const demandedMetal = state.buyOrders.find(k => state.metals[k] > 0);
-    if (demandedMetal) {
-      const val = Math.max(1, Math.round(METALS[demandedMetal].value * m.metalRewardMult));
-      state.metals[demandedMetal]--;
+    const heldMetals = Object.entries(state.metals)
+      .filter(([k, qty]) => qty > 0)
+      .sort((a, b) => METALS[b[0]].value - METALS[a[0]].value);
+
+    let sold = 0;
+    for (const [key] of heldMetals) {
+      if (sold >= 2) break;
+      const baseVal = Math.max(1, Math.round(METALS[key].value * m.metalRewardMult));
+      const val = Math.floor(baseVal * 0.9);
+      state.metals[key]--;
       state.gold += val;
-      log(`Seller sold 1 ${METALS[demandedMetal].label} for ${val} gold.`, 'good');
-      return;
+      log(`Seller sold 1 ${METALS[key].label} for ${val} gold (90% rate).`, 'good');
+      sold++;
     }
-    // Try geodes
+    if (sold > 0) return;
+
+    // Fall through to geodes if no metals
     if (state.geodes.length > 0) {
       const geode = state.geodes.shift();
-      const val = effectiveGeodeValue(geode.tierIdx);
+      const val = Math.floor(effectiveGeodeValue(geode.tierIdx) * 0.9);
       state.gold += val;
-      log(`Seller sold a ${GEODE_TIERS[geode.tierIdx].label} for ${val} gold.`, 'good');
+      log(`Seller sold a ${GEODE_TIERS[geode.tierIdx].label} for ${val} gold (90% rate).`, 'good');
       return;
     }
   }
@@ -1751,7 +1811,7 @@ function sellerAct() {
     return;
   }
 
-  // Level 1+: sell wood (3 logs → 20g, same as manual sell)
+  // Level 1+: sell wood (3 logs → 20g)
   if (state.wood >= 3) {
     state.wood -= 3;
     state.gold += 20;
@@ -1783,8 +1843,9 @@ function buyPickaxe() {
 }
 
 function upgradeForest() {
-  if (state.gold < FOREST_UPGRADE_COST || state.dead) return;
+  if (state.forestUpgraded || state.gold < FOREST_UPGRADE_COST || state.dead) return;
   state.gold -= FOREST_UPGRADE_COST;
+  state.forestUpgraded = true;
   state.forestRows++;
   const newId = state.trees.length;
   for (let i = 0; i < 5; i++) {
@@ -1795,8 +1856,9 @@ function upgradeForest() {
 }
 
 function upgradeMine() {
-  if (!state.mineOwned || state.gold < MINE_UPGRADE_COST || state.dead) return;
+  if (state.mineUpgraded || !state.mineOwned || state.gold < MINE_UPGRADE_COST || state.dead) return;
   state.gold -= MINE_UPGRADE_COST;
+  state.mineUpgraded = true;
   state.mineRows++;
   const newId = state.mineNodes.length;
   for (let i = 0; i < 4; i++) {
@@ -2030,27 +2092,44 @@ function buyFood(days) {
 function endDay() {
   if (state.dead) return;
 
-  // ── Winter worker death determination ──────────────────────────────
-  // On first day of winter, if worker alive, decide if they'll die
-  if (getSeason() === 'winter' && (state.day - 1) % SEASON_CYCLE === 0) {
-    if (state.worker && Math.random() < SEASONS.winter.workerDeathChance) {
-      // Roll a random day 1-30 within this winter for when they die
-      state.workerDeathDay = state.day + Math.floor(Math.random() * SEASON_LENGTH);
-      log(`An icy wind whispers of hardship. Your worker will not survive the winter...`, 'bad');
-    } else {
-      state.workerDeathDay = null; // Worker survives this winter
-    }
+  // ── Winter death determination — day 1 of each winter ──────────────────
+  const isWinterStart = getSeason() === 'winter' && (state.day - 1) % SEASON_CYCLE === 0;
+  if (isWinterStart) {
+    const deathChance = SEASONS.winter.workerDeathChance; // 10%
+    const pickDeathDay = () => state.day + Math.floor(Math.random() * SEASON_LENGTH);
+
+    if (state.worker && Math.random() < deathChance) {
+      state.workerDeathDay = pickDeathDay();
+      log('An icy wind whispers of hardship. Your worker may not survive the winter.', 'bad');
+    } else { state.workerDeathDay = null; }
+
+    if (state.worker2 && Math.random() < deathChance) {
+      state.worker2DeathDay = pickDeathDay();
+      log('Your second worker looks pale. The winter may claim them.', 'bad');
+    } else { state.worker2DeathDay = null; }
+
+    if (state.seller && Math.random() < deathChance) {
+      state.sellerDeathDay = pickDeathDay();
+      log('Your seller shivers at the gate. They may not make it through the cold.', 'bad');
+    } else { state.sellerDeathDay = null; }
   }
 
-  // If today is the predetermined death day, the worker dies
+  // ── Predetermined deaths fire today ─────────────────────────────────────
   if (state.workerDeathDay === state.day && state.worker) {
-    log('The bitter winter claims your worker\'s life. You recover the body at dawn.', 'bad');
-    state.worker = null;
-    state.workerDeathDay = null;
+    log('The bitter cold claims your worker. You find them at dawn.', 'bad');
+    state.worker = null; state.workerDeathDay = null;
+  }
+  if (state.worker2DeathDay === state.day && state.worker2) {
+    log('The frost takes your second worker in the night.', 'bad');
+    state.worker2 = null; state.worker2DeathDay = null;
+  }
+  if (state.sellerDeathDay === state.day && state.seller) {
+    log('Your seller does not return from the market. Winter has claimed them.', 'bad');
+    state.seller = null; state.sellerDeathDay = null;
   }
 
   // ── Food resolution ──────────────────────────────
-  const mouths = 1 + (state.worker ? 1 : 0) + (state.seller ? 1 : 0);
+  const mouths = 1 + (state.worker ? 1 : 0) + (state.worker2 ? 1 : 0) + (state.seller ? 1 : 0);
 
   if (state.food === 0) {
     state.dead = true;
@@ -2081,8 +2160,9 @@ function endDay() {
   }
 
   // ── Worker and seller act ────────────────────────
-  if (state.worker) workerAct();
-  if (state.seller) sellerAct();
+  if (state.worker)  workerAct('worker');
+  if (state.worker2) workerAct('worker2');
+  if (state.seller)  sellerAct();
 
   // Tick active event
   if (state.activeEvent) {
@@ -2126,7 +2206,7 @@ function endDay() {
   state.ap = mod().apMax;
   rollBuyOrders();
 
-  const mouthsLabel = mouths === 1 ? '1 food' : `${mouths} food (you${state.worker ? ' + worker' : ''}${state.seller ? ' + seller' : ''})`;
+  const mouthsLabel = mouths === 1 ? '1 food' : `${mouths} food (you${state.worker ? ' + worker' : ''}${state.worker2 ? ' + worker 2' : ''}${state.seller ? ' + seller' : ''})`;
   let msg = `Day ${state.day} begins (${SEASONS[getSeason()].name}). Consumed ${mouthsLabel} — ${state.food} days remain.`;
   if (regrew > 0) msg += ` ${regrew} tree${regrew > 1 ? 's' : ''} regrew overnight.`;
   if (state.activeEvent) msg += ` ⚑ ${state.activeEvent.title}.`;
@@ -2151,8 +2231,10 @@ function endDay() {
 // ═══════════════════════════════
 
 function render() {
-  // Day
-  document.getElementById('dayVal').textContent = state.day;
+  // Year / Day
+  const year = Math.ceil(state.day / 365);
+  const dayOfYear = ((state.day - 1) % 365) + 1;
+  document.getElementById('dayVal').textContent = `Y${year} D${dayOfYear}`;
   document.getElementById('seasonVal').textContent = SEASONS[getSeason()].name;
 
   // Gold
@@ -2216,7 +2298,7 @@ function render() {
   chopBtn.disabled = state.ap < chopCost || standingCount === 0 || state.dead;
   chopBtn.textContent = `Chop Wood — ${chopCost} Actions → 1 Log${state.axe ? ' (Axe)' : ''}`;
 
-  // Forest upgrade button — inject after chop btn if not already there
+  // Forest upgrade button — hide after one use
   let forestUpgradeRow = document.getElementById('forestUpgradeRow');
   if (!forestUpgradeRow) {
     forestUpgradeRow = document.createElement('div');
@@ -2224,8 +2306,12 @@ function render() {
     forestUpgradeRow.style.cssText = 'margin-top:6px;display:flex;justify-content:flex-end;';
     chopBtn.parentNode.appendChild(forestUpgradeRow);
   }
-  forestUpgradeRow.innerHTML = `<button class="tool-buy-btn" id="forestUpgradeBtn" onclick="upgradeForest()" style="font-size:0.55rem">+ Row — ${FOREST_UPGRADE_COST}g</button>`;
-  document.getElementById('forestUpgradeBtn').disabled = state.gold < FOREST_UPGRADE_COST || state.dead;
+  if (state.forestUpgraded) {
+    forestUpgradeRow.innerHTML = '<span style="font-size:0.65rem;color:#88cc66;font-style:italic;">✦ Forest expanded</span>';
+  } else {
+    forestUpgradeRow.innerHTML = `<button class="tool-buy-btn" id="forestUpgradeBtn" onclick="upgradeForest()" style="font-size:0.55rem">+ Row — ${FOREST_UPGRADE_COST}g</button>`;
+    document.getElementById('forestUpgradeBtn').disabled = state.gold < FOREST_UPGRADE_COST || state.dead;
+  }
 
   // Market buttons
   const fc1 = effectiveFoodCost(1);
@@ -2300,7 +2386,10 @@ function render() {
         </button>
         ${smeltBtn}
         <div style="margin-top:6px;display:flex;justify-content:flex-end;">
-          <button class="tool-buy-btn" id="mineUpgradeBtn" onclick="upgradeMine()" style="font-size:0.55rem">+ Row — ${MINE_UPGRADE_COST}g</button>
+          ${state.mineUpgraded
+            ? `<span style="font-size:0.65rem;color:#88cc66;font-style:italic;">✦ Mine expanded</span>`
+            : `<button class="tool-buy-btn" id="mineUpgradeBtn" onclick="upgradeMine()" style="font-size:0.55rem">+ Row — ${MINE_UPGRADE_COST}g</button>`
+          }
         </div>
       </div>`;
     document.getElementById('digBtn').disabled = state.ap < digCost || intactCount === 0 || state.dead;
@@ -2308,7 +2397,9 @@ function render() {
       document.getElementById('smeltBtn').disabled =
         state.stone < SMELT_STONE_COST || state.gold < SMELT_GOLD_COST || state.ap < SMELT_AP_COST || state.dead;
     }
-    document.getElementById('mineUpgradeBtn').disabled = state.gold < MINE_UPGRADE_COST || state.dead;
+    if (!state.mineUpgraded) {
+      document.getElementById('mineUpgradeBtn').disabled = state.gold < MINE_UPGRADE_COST || state.dead;
+    }
     renderMineGrid();
   }
 
@@ -2367,7 +2458,51 @@ function render() {
     }
   }
 
-  // ── AP upgrade section ───────────────────────────
+  // ── Worker 2 panel ───────────────────────────────
+  const worker2Section = document.getElementById('worker2Section');
+  if (worker2Section) {
+    const canSeeW2 = state.worker && (state.worker2 || state.gold >= 450 || state.day >= 20);
+    if (!canSeeW2) {
+      worker2Section.innerHTML = '';
+    } else if (!state.worker2) {
+      worker2Section.innerHTML = `
+        <div class="panel worker-panel">
+          <div class="panel-title"><span class="panel-icon">👷</span> Second Worker</div>
+          <div class="mine-locked">
+            <div class="worker-locked-msg">Another labourer seeks work for <strong style="color:var(--gold-bright)">${WORKER2_COST} gold</strong> — double the first worker's rates.</div>
+            <button class="mine-btn open" id="hireWorker2Btn" onclick="hireWorker2()">Hire Worker 2 — ${WORKER2_COST} Gold</button>
+          </div>
+        </div>`;
+      document.getElementById('hireWorker2Btn').disabled = state.gold < WORKER2_COST || state.dead;
+    } else {
+      const w2 = state.worker2;
+      const canUpgradeW2 = w2.level < WORKER2_MAX_LEVEL;
+      const stoneTaskAvail2 = w2.level >= WORKER_TASKS.stone.minLevel && state.mineOwned;
+      worker2Section.innerHTML = `
+        <div class="panel worker-panel">
+          <div class="panel-title"><span class="panel-icon">👷</span> Worker 2</div>
+          <div class="worker-status">
+            <div class="worker-stat"><span class="worker-stat-label">Level</span><span class="worker-stat-value">${w2.level} / ${WORKER2_MAX_LEVEL}</span></div>
+            <div class="worker-stat"><span class="worker-stat-label">Task</span><span class="worker-stat-value">${WORKER_TASKS[w2.task].label}</span></div>
+          </div>
+          <div class="worker-task-row">
+            <button class="worker-task-btn ${w2.task === 'wood' ? 'active' : ''}" onclick="setWorker2Task('wood')">🌲 Wood</button>
+            <button class="worker-task-btn ${w2.task === 'stone' ? 'active' : ''}" onclick="setWorker2Task('stone')" ${stoneTaskAvail2 ? '' : 'disabled'}>
+              🪨 Stone${w2.level < WORKER_TASKS.stone.minLevel ? ' (Lv.3)' : !state.mineOwned ? ' (no mine)' : ''}
+            </button>
+          </div>
+          ${canUpgradeW2
+            ? `<button class="worker-upgrade-btn" id="worker2UpgradeBtn" onclick="upgradeWorker2()">Promote to Level ${w2.level + 1} — ${WORKER2_UPGRADE_COST} Gold</button>`
+            : `<div class="worker-max-badge">✦ Max Level Reached</div>`
+          }
+        </div>`;
+      if (canUpgradeW2) {
+        document.getElementById('worker2UpgradeBtn').disabled = state.gold < WORKER2_UPGRADE_COST || state.dead;
+      }
+    }
+  }
+
+  // ── Seller panel ─────────────────────────────────
   const apSec = document.getElementById('apUpgradeSection');
   if (state.extraApUnlocked) {
     apSec.innerHTML = `<div class="ap-unlocked-badge">✦ Extra Action Point unlocked — Forge active</div>`;
@@ -2385,19 +2520,23 @@ function render() {
   // ── Metal sell buttons ───────────────────────────
   const smeltUnlocked = state.extraApUnlocked;
   const metalDefs = [
-    { key: 'iron',     btnId: 'sellIronBtn', badgeId: 'ironDemand', rowId: 'invIronRow', valId: 'ironVal' },
-    { key: 'aluminum', btnId: 'sellAlumBtn', badgeId: 'alumDemand', rowId: 'invAlumRow', valId: 'alumVal' },
-    { key: 'copper',   btnId: 'sellCopBtn',  badgeId: 'copDemand',  rowId: 'invCopRow',  valId: 'copVal'  },
+    { key: 'iron',     btnId: 'sellIronBtn',   badgeId: 'ironDemand',   rowId: 'invIronRow',   valId: 'ironVal'   },
+    { key: 'aluminum', btnId: 'sellAlumBtn',   badgeId: 'alumDemand',   rowId: 'invAlumRow',   valId: 'alumVal'   },
+    { key: 'copper',   btnId: 'sellCopBtn',    badgeId: 'copDemand',    rowId: 'invCopRow',    valId: 'copVal'    },
+    { key: 'silver',   btnId: 'sellSilverBtn', badgeId: 'silverDemand', rowId: 'invSilverRow', valId: 'silverVal' },
   ];
   metalDefs.forEach(({ key, btnId, badgeId, rowId, valId }) => {
     const hasMetal = state.metals[key] > 0;
-    const inDemand = state.buyOrders.includes(key);
-    document.getElementById(valId).textContent  = state.metals[key];
-    document.getElementById(rowId).style.display = smeltUnlocked ? '' : 'none';
-    document.getElementById(btnId).style.display = smeltUnlocked ? '' : 'none';
+    const isAlwaysDemand = METALS[key].alwaysDemand;
+    const inDemand = isAlwaysDemand ? state.pickaxe : state.buyOrders.includes(key);
+    const show = smeltUnlocked && (key !== 'silver' || state.pickaxe);
+    document.getElementById(valId).textContent   = state.metals[key];
+    document.getElementById(rowId).style.display  = show ? '' : 'none';
+    document.getElementById(btnId).style.display  = show ? '' : 'none';
     const badge = document.getElementById(badgeId);
-    badge.textContent = inDemand ? 'in demand' : 'no orders';
+    badge.textContent = isAlwaysDemand ? 'always' : (inDemand ? 'in demand' : 'no orders');
     badge.className   = 'demand-badge ' + (inDemand ? 'active' : 'inactive');
+    if (isAlwaysDemand) badge.className = 'demand-badge active';
     document.getElementById(btnId).disabled = !hasMetal || !inDemand || state.ap < MARKET_AP_COST || state.dead;
   });
 
@@ -2515,7 +2654,7 @@ function render() {
   if (showCabin) document.getElementById('cabinBtn').disabled = state.gold < CABIN_COST || state.dead;
   const warn = document.getElementById('warningStrip');
   const foodCostToday = effectiveFoodCost(1);
-  const dailyMouths = 1 + (state.worker ? 1 : 0) + (state.seller ? 1 : 0);
+  const dailyMouths = 1 + (state.worker ? 1 : 0) + (state.worker2 ? 1 : 0) + (state.seller ? 1 : 0);
   if (state.food === 0 && !state.dead) {
     warn.textContent = '⚠ You have no food — end the day and you will starve.';
     warn.className = 'warning-strip visible';
