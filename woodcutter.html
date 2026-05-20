@@ -64,7 +64,7 @@
   .game-wrapper {
     position: relative;
     z-index: 1;
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 20px 16px 60px;
   }
@@ -97,7 +97,7 @@
   /* ── DAY STATUS BAR ── */
   .status-bar {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
     margin-bottom: 20px;
   }
@@ -106,8 +106,10 @@
     background: var(--bark-light);
     border: 1px solid var(--bark-mid);
     border-radius: 3px;
-    padding: 10px 14px;
-    text-align: center;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     position: relative;
     overflow: hidden;
   }
@@ -128,26 +130,17 @@
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: var(--parchment-dim);
-    display: block;
-    margin-bottom: 3px;
   }
 
   .stat-value {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     color: var(--gold-bright);
     line-height: 1;
   }
 
   .stat-value.danger { color: var(--blood-bright); }
   .stat-value.good { color: #88cc66; }
-
-  .stat-sub {
-    font-size: 0.72rem;
-    color: var(--parchment-dim);
-    font-style: italic;
-    margin-top: 2px;
-  }
 
   /* ── ACTION POINTS ── */
   .actions-section {
@@ -201,13 +194,14 @@
   /* ── MAIN LAYOUT ── */
   .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
     margin-bottom: 16px;
   }
 
-  @media (max-width: 580px) {
+  @media (max-width: 700px) {
     .main-grid { grid-template-columns: 1fr; }
+    .status-bar { grid-template-columns: 1fr 1fr; }
   }
 
   /* ── PANELS ── */
@@ -605,6 +599,81 @@
   }
   .worker-acting { animation: workerPulse 0.6s ease; }
 
+  /* ── SELLER ── */
+  .seller-panel .panel-title { color: #a8c878; }
+
+  /* ── TOOLS PANEL ── */
+  .tool-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .tool-row:last-child { border-bottom: none; }
+  .tool-name {
+    font-size: 0.85rem;
+    color: var(--parchment-dim);
+  }
+  .tool-owned { color: #88cc66; font-size: 0.75rem; font-style: italic; }
+  .tool-buy-btn {
+    padding: 5px 12px;
+    border-radius: 2px;
+    border: 1px solid var(--gold-dim);
+    background: rgba(201,147,42,0.1);
+    color: var(--parchment);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .tool-buy-btn:hover:not(:disabled) {
+    background: rgba(201,147,42,0.22);
+    border-color: var(--gold);
+  }
+  .tool-buy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── CABIN (win button) ── */
+  .cabin-section {
+    margin-top: 12px;
+  }
+  .cabin-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #2a1a08 0%, #4a3010 50%, #2a1a08 100%);
+    border: 2px solid var(--gold);
+    border-radius: 3px;
+    color: var(--gold-bright);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(232,184,75,0.5);
+  }
+  .cabin-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3a2210 0%, #6a4818 50%, #3a2210 100%);
+    box-shadow: 0 0 30px rgba(201,147,42,0.4);
+  }
+  .cabin-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: var(--gold-dim);
+    color: var(--parchment-dim);
+    text-shadow: none;
+  }
+  .cabin-progress {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+    text-align: center;
+  }
+
   .geode-flash {
     position: fixed;
     top: 50%;
@@ -990,25 +1059,24 @@
     <div class="stat-box" id="dayBox">
       <span class="stat-label">Day</span>
       <span class="stat-value" id="dayVal">1</span>
-      <span class="stat-sub">of survival</span>
     </div>
     <div class="stat-box" id="goldBox">
       <span class="stat-label">Gold</span>
       <span class="stat-value" id="goldVal">5</span>
-      <span class="stat-sub" id="goldSub">starting coin</span>
-      <div class="progress-bar"><div class="progress-fill" id="goldBar" style="width:5%"></div></div>
     </div>
     <div class="stat-box" id="foodBox">
       <span class="stat-label">Food</span>
       <span class="stat-value" id="foodVal">1</span>
-      <span class="stat-sub" id="foodSub">day supply</span>
-      <div class="progress-bar"><div class="progress-fill" id="foodBar" style="width:14%"></div></div>
     </div>
     <div class="stat-box" id="seasonBox">
       <span class="stat-label">Season</span>
-      <span class="stat-value" id="seasonVal">Winter</span>
-      <span class="stat-sub">cycles every 120 days</span>
+      <span class="stat-value" id="seasonVal" style="font-size:1rem">Winter</span>
     </div>
+  </div>
+
+  <!-- SPACEBAR NOTE -->
+  <div style="text-align:center; margin-bottom:14px; font-style:italic; font-size:0.8rem; color:var(--parchment-dim);">
+    Press <strong style="color:var(--gold);font-style:normal;">Space</strong> to end the day
   </div>
 
   <!-- ACTIONS -->
@@ -1028,32 +1096,33 @@
     <div class="event-effects" id="eventEffects"></div>
   </div>
 
-  <!-- MAIN GRID: left = forest + mine, right = inventory + market -->
+  <!-- MAIN GRID: 3 columns -->
   <div class="main-grid">
 
-    <!-- LEFT COLUMN: Forest then Mine -->
+    <!-- LEFT: Forest + Mine -->
     <div style="display:flex; flex-direction:column; gap:12px;">
 
-      <!-- FOREST -->
       <div class="panel">
         <div class="panel-title"><span class="panel-icon">🌲</span> The Forest</div>
         <div class="forest-grid" id="forestGrid"></div>
-        <button class="chop-btn" id="chopBtn" onclick="chopWood()">
-          Chop Wood — 3 Actions → 1 Log
-        </button>
+        <button class="chop-btn" id="chopBtn" onclick="chopWood()">Chop Wood — 3 Actions → 1 Log</button>
       </div>
 
-      <!-- MINE (rendered by JS into this div) -->
       <div id="mineSection"></div>
-
-      <!-- WORKER (rendered by JS into this div) -->
-      <div id="workerSection"></div>
 
     </div>
 
-    <!-- RIGHT COLUMN: Inventory + Market -->
-    <div>
-      <div class="panel" style="margin-bottom:10px;">
+    <!-- MIDDLE: Worker + Seller + Tools -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div id="workerSection"></div>
+      <div id="sellerSection"></div>
+      <div id="toolsSection"></div>
+    </div>
+
+    <!-- RIGHT: Inventory + Market + Cabin -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+
+      <div class="panel">
         <div class="panel-title"><span class="panel-icon">🪵</span> Inventory</div>
         <div class="inv-row">
           <span class="inv-name">Wood Logs</span>
@@ -1127,6 +1196,10 @@
         </button>
 
       </div>
+
+      <!-- CABIN WIN BUTTON -->
+      <div id="cabinSection"></div>
+
     </div>
 
   </div>
@@ -1141,14 +1214,6 @@
   <div class="smelt-flash" id="smeltFlash">
     <span class="smelt-flash-icon" id="smeltFlashIcon"></span>
     <div class="smelt-flash-text" id="smeltFlashText"></div>
-  </div>
-
-  <!-- END DAY -->
-  <div class="end-day-section">
-    <div class="section-title">When Ready</div>
-    <button class="end-day-btn" id="endDayBtn" onclick="endDay()">
-      ☽ Rest &amp; End the Day
-    </button>
   </div>
 
   <!-- LOG -->
@@ -1203,6 +1268,20 @@ const SMELT_OUTCOMES = [
 const WORKER_COST         = 250;
 const WORKER_UPGRADE_COST = 250;
 const WORKER_MAX_LEVEL    = 3;
+
+const SELLER_COST         = 500;
+const SELLER_UPGRADE_COST = 400;
+const SELLER_MAX_LEVEL    = 3;
+// Level 1: sells wood only. Level 2: + stone + geodes. Level 3: + metals
+const SELLER_LEVEL_LABEL = ['', 'Sells Wood', 'Sells Wood · Stone · Geodes', 'Sells All'];
+
+const AXE_COST      = 300;   // reduces chop cost by 1 AP
+const PICKAXE_COST  = 500;   // reduces dig cost by 1 AP
+
+const CABIN_COST    = 10000;
+
+const FOREST_UPGRADE_COST = 300;  // adds 5 more trees (one row)
+const MINE_UPGRADE_COST   = 400;  // adds 4 more nodes (one row)
 
 // ═══════════════════════════════
 //  SEASONS
@@ -1406,10 +1485,18 @@ function newGame() {
     buyOrders:        [],
     // Worker
     worker:           null,  // null | { level: 1-3, task: 'wood'|'stone' }
-    workerDeathDay:   null,  // null or the day the worker dies (predetermined on first day of winter)
+    workerDeathDay:   null,
+    // Seller
+    seller:           null,  // null | { level: 1-3 }
+    // Tools
+    axe:              false,
+    pickaxe:          false,
+    // Upgrades
+    forestRows:       2,   // starts at 2 rows (10 trees), max we'll leave open
+    mineRows:         2,   // starts at 2 rows (8 nodes)
   };
 
-  for (let i = 0; i < TREE_COUNT; i++) {
+  for (let i = 0; i < state.forestRows * 5; i++) {
     state.trees.push({ id: i, status: 'standing', regrowIn: 0 });
   }
 
@@ -1424,12 +1511,15 @@ function mod() {
   const e = state.activeEvent;
   const season = SEASONS[getSeason()];
   const baseAp = TOTAL_AP + (state.extraApUnlocked ? 1 : 0);
+  const baseChop = Math.max(1, CHOP_COST - (state.axe ? 1 : 0));
+  const baseDig  = Math.max(1, MINE_AP_COST - (state.pickaxe ? 1 : 0));
   return {
-    woodPrice:  e?.effects?.woodPrice  ?? 1,
-    foodPrice:  (e?.effects?.foodPrice ?? 1) * season.foodPriceMult,
-    chopCost:   e?.effects?.chopCost   ?? CHOP_COST,
-    apMax:      e?.effects?.apMax != null ? e.effects.apMax + (state.extraApUnlocked ? 1 : 0) : baseAp,
-    regrowMod:  (e?.effects?.regrowMod ?? 0) + season.regrowMod,
+    woodPrice:   e?.effects?.woodPrice  ?? 1,
+    foodPrice:   (e?.effects?.foodPrice ?? 1) * season.foodPriceMult,
+    chopCost:    e?.effects?.chopCost != null ? Math.max(1, e.effects.chopCost - (state.axe ? 1 : 0)) : baseChop,
+    digCost:     baseDig,
+    apMax:       e?.effects?.apMax != null ? e.effects.apMax + (state.extraApUnlocked ? 1 : 0) : baseAp,
+    regrowMod:   (e?.effects?.regrowMod ?? 0) + season.regrowMod,
     metalRewardMult: season.metalRewardMult,
     geodeRewardMult: season.geodeRewardMult,
   };
@@ -1463,7 +1553,7 @@ function rollGeodeTier() {
 
 function initMineNodes() {
   state.mineNodes = [];
-  for (let i = 0; i < MINE_NODE_COUNT; i++) {
+  for (let i = 0; i < state.mineRows * 4; i++) {
     state.mineNodes.push({ id: i, status: 'intact', regenIn: 0 });
   }
 }
@@ -1605,7 +1695,127 @@ function workerAct() {
   }
 }
 
-// ── Mine event overlay flash ──────────────────────
+// ═══════════════════════════════
+//  SELLER
+// ═══════════════════════════════
+
+function hireSeller() {
+  if (state.seller || state.gold < SELLER_COST || state.dead) return;
+  state.gold -= SELLER_COST;
+  state.seller = { level: 1 };
+  log(`You hired a seller for ${SELLER_COST} gold. They will sell your wood each day.`, 'good');
+  render();
+}
+
+function upgradeSeller() {
+  if (!state.seller || state.seller.level >= SELLER_MAX_LEVEL || state.dead) return;
+  if (state.gold < SELLER_UPGRADE_COST) return;
+  state.gold -= SELLER_UPGRADE_COST;
+  state.seller.level++;
+  log(`Seller promoted to level ${state.seller.level} for ${SELLER_UPGRADE_COST} gold.`, 'good');
+  render();
+}
+
+// Called at end of each day — seller auto-sells best available resource
+function sellerAct() {
+  if (!state.seller) return;
+  const { level } = state.seller;
+  const m = mod();
+
+  // Level 3: try metals first (highest value, demand-gated)
+  if (level >= 3) {
+    const demandedMetal = state.buyOrders.find(k => state.metals[k] > 0);
+    if (demandedMetal) {
+      const val = Math.max(1, Math.round(METALS[demandedMetal].value * m.metalRewardMult));
+      state.metals[demandedMetal]--;
+      state.gold += val;
+      log(`Seller sold 1 ${METALS[demandedMetal].label} for ${val} gold.`, 'good');
+      return;
+    }
+    // Try geodes
+    if (state.geodes.length > 0) {
+      const geode = state.geodes.shift();
+      const val = effectiveGeodeValue(geode.tierIdx);
+      state.gold += val;
+      log(`Seller sold a ${GEODE_TIERS[geode.tierIdx].label} for ${val} gold.`, 'good');
+      return;
+    }
+  }
+
+  // Level 2+: try stone pairs
+  if (level >= 2 && state.stone >= 2) {
+    const val = Math.round(STONE_PAIR_VALUE * m.woodPrice);
+    state.stone -= 2;
+    state.gold += val;
+    log(`Seller sold 2 stone for ${val} gold.`, 'good');
+    return;
+  }
+
+  // Level 1+: sell wood (3 logs → 20g, same as manual sell)
+  if (state.wood >= 3) {
+    state.wood -= 3;
+    state.gold += 20;
+    log(`Seller sold 3 logs for 20 gold.`, 'good');
+    return;
+  }
+
+  log(`Seller had nothing to sell today.`);
+}
+
+// ═══════════════════════════════
+//  TOOLS
+// ═══════════════════════════════
+
+function buyAxe() {
+  if (state.axe || state.gold < AXE_COST || state.dead) return;
+  state.gold -= AXE_COST;
+  state.axe = true;
+  log(`Purchased an Iron Axe for ${AXE_COST} gold. Chop cost reduced by 1 AP.`, 'good');
+  render();
+}
+
+function buyPickaxe() {
+  if (state.pickaxe || state.gold < PICKAXE_COST || state.dead) return;
+  state.gold -= PICKAXE_COST;
+  state.pickaxe = true;
+  log(`Purchased a Steel Pickaxe for ${PICKAXE_COST} gold. Dig cost reduced by 1 AP.`, 'good');
+  render();
+}
+
+function upgradeForest() {
+  if (state.gold < FOREST_UPGRADE_COST || state.dead) return;
+  state.gold -= FOREST_UPGRADE_COST;
+  state.forestRows++;
+  const newId = state.trees.length;
+  for (let i = 0; i < 5; i++) {
+    state.trees.push({ id: newId + i, status: 'standing', regrowIn: 0 });
+  }
+  log(`Cleared a new row of land — forest expanded to ${state.trees.length} trees.`, 'good');
+  render();
+}
+
+function upgradeMine() {
+  if (!state.mineOwned || state.gold < MINE_UPGRADE_COST || state.dead) return;
+  state.gold -= MINE_UPGRADE_COST;
+  state.mineRows++;
+  const newId = state.mineNodes.length;
+  for (let i = 0; i < 4; i++) {
+    state.mineNodes.push({ id: newId + i, status: 'intact', regenIn: 0 });
+  }
+  log(`Excavated a new shaft — mine expanded to ${state.mineNodes.length} nodes.`, 'good');
+  render();
+}
+
+// ═══════════════════════════════
+//  CABIN
+// ═══════════════════════════════
+
+function buildCabin() {
+  if (state.gold < CABIN_COST || state.dead) return;
+  state.gold -= CABIN_COST;
+  state.won = true;
+  showOverlay(true, `You spent ${CABIN_COST} gold and built the Cabin of Your Dreams. Day ${state.day} — you finally rest.`);
+}
 function showGeodeFlash(tierIdx) {
   const tier = GEODE_TIERS[tierIdx];
   const val  = effectiveGeodeValue(tierIdx);
@@ -1668,7 +1878,8 @@ function openMine() {
 
 function digStone() {
   if (!state.mineOwned || state.mineCollapsed) return;
-  if (state.ap < MINE_AP_COST) return;
+  const digCost = mod().digCost;
+  if (state.ap < digCost) return;
   const intact = state.mineNodes.filter(n => n.status === 'intact');
   if (intact.length === 0) return;
 
@@ -1685,7 +1896,7 @@ function digStone() {
     node.status = 'regen';
   }
 
-  state.ap -= MINE_AP_COST;
+  state.ap -= digCost;
   state.stone += 1;
 
   // Geode roll
@@ -1839,6 +2050,8 @@ function endDay() {
   }
 
   // ── Food resolution ──────────────────────────────
+  const mouths = 1 + (state.worker ? 1 : 0) + (state.seller ? 1 : 0);
+
   if (state.food === 0) {
     state.dead = true;
     log('You had no food at day\'s end. Starvation claims you.', 'bad');
@@ -1847,26 +2060,29 @@ function endDay() {
     return;
   }
 
-  if (state.worker && state.food === 1) {
-    // One ration, two mouths — 50/50
-    log('Only one ration remains. You and your worker fight over it...', 'bad');
+  if (state.food < mouths && state.food > 0) {
+    // Not enough for everyone — fight breaks out, 50/50 you die
+    const companions = [state.worker ? 'worker' : null, state.seller ? 'seller' : null].filter(Boolean);
+    log(`Only ${state.food} ration${state.food > 1 ? 's' : ''} for ${mouths} mouths. A fight breaks out...`, 'bad');
     if (Math.random() < 0.5) {
       state.dead = true;
-      log('You lost. Your worker takes the food and leaves you to die.', 'bad');
-      showOverlay(false, `Day ${state.day} — killed by your own worker over the last ration.`);
+      log(`You lost. Your ${companions[0]} takes the food and you are left to die.`, 'bad');
+      showOverlay(false, `Day ${state.day} — killed over the last ration.`);
       render();
       return;
     } else {
-      log('You took the last ration. Your worker, unfed, walks away.', 'bad');
+      log(`You fought for the last ration and won. Your ${companions.join(' and ')} walk${companions.length > 1 ? '' : 's'} away.`, 'bad');
       state.worker = null;
+      state.seller = null;
       state.food -= 1;
     }
   } else {
-    state.food -= state.worker ? 2 : 1;
+    state.food -= mouths;
   }
 
-  // ── Worker acts ──────────────────────────────────
+  // ── Worker and seller act ────────────────────────
   if (state.worker) workerAct();
+  if (state.seller) sellerAct();
 
   // Tick active event
   if (state.activeEvent) {
@@ -1910,7 +2126,8 @@ function endDay() {
   state.ap = mod().apMax;
   rollBuyOrders();
 
-  let msg = `Day ${state.day} begins (${SEASONS[getSeason()].name}). Consumed ${state.worker ? '2 food (you + worker)' : '1 food'} — ${state.food} days remain.`;
+  const mouthsLabel = mouths === 1 ? '1 food' : `${mouths} food (you${state.worker ? ' + worker' : ''}${state.seller ? ' + seller' : ''})`;
+  let msg = `Day ${state.day} begins (${SEASONS[getSeason()].name}). Consumed ${mouthsLabel} — ${state.food} days remain.`;
   if (regrew > 0) msg += ` ${regrew} tree${regrew > 1 ? 's' : ''} regrew overnight.`;
   if (state.activeEvent) msg += ` ⚑ ${state.activeEvent.title}.`;
   if (state.extraApUnlocked) {
@@ -1919,10 +2136,11 @@ function endDay() {
   }
   log(msg, 'day');
 
-  // Win condition — survive 100 years (36,475 days)
+  // Win condition — build the cabin (gold threshold + button click)
+  // Day cap at 36475 still ends the run but as a special message
   if (state.day > 36475) {
     state.won = true;
-    showOverlay(true, `You survived 100 years in the forest with ${state.gold} gold.`);
+    showOverlay(true, `You survived 100 years in the forest with ${state.gold} gold. A legend.`);
   }
 
   render();
@@ -1941,18 +2159,12 @@ function render() {
   const goldEl = document.getElementById('goldVal');
   goldEl.textContent = state.gold;
   goldEl.className = 'stat-value' + (state.gold < 5 ? ' danger' : '');
-  document.getElementById('goldSub').textContent = state.gold >= 25 ? 'comfortable' : state.gold >= 10 ? 'modest reserves' : 'barely enough';
-  document.getElementById('goldBar').style.width = Math.min(100, (state.gold / 50) * 100) + '%';
-  document.getElementById('goldBar').className = 'progress-fill' + (state.gold < 5 ? ' danger' : '');
   document.getElementById('goldBox').className = 'stat-box' + (state.gold < 5 ? ' danger' : state.gold >= 20 ? ' good' : '');
 
   // Food
   const foodEl = document.getElementById('foodVal');
   foodEl.textContent = state.food;
   foodEl.className = 'stat-value' + (state.food < 2 ? ' danger' : '');
-  document.getElementById('foodSub').textContent = state.food === 0 ? 'starving!' : state.food === 1 ? 'last ration' : state.food < 4 ? `${state.food} days left` : `${state.food} days stocked`;
-  document.getElementById('foodBar').style.width = Math.min(100, (state.food / 7) * 100) + '%';
-  document.getElementById('foodBar').className = 'progress-fill' + (state.food < 2 ? ' danger' : '');
   document.getElementById('foodBox').className = 'stat-box' + (state.food === 0 ? ' danger' : state.food >= 5 ? ' good' : '');
 
   // Wood
@@ -2002,7 +2214,18 @@ function render() {
   const chopCost = mod().chopCost;
   const chopBtn = document.getElementById('chopBtn');
   chopBtn.disabled = state.ap < chopCost || standingCount === 0 || state.dead;
-  chopBtn.textContent = `Chop Wood — ${chopCost} Actions → 1 Log`;
+  chopBtn.textContent = `Chop Wood — ${chopCost} Actions → 1 Log${state.axe ? ' (Axe)' : ''}`;
+
+  // Forest upgrade button — inject after chop btn if not already there
+  let forestUpgradeRow = document.getElementById('forestUpgradeRow');
+  if (!forestUpgradeRow) {
+    forestUpgradeRow = document.createElement('div');
+    forestUpgradeRow.id = 'forestUpgradeRow';
+    forestUpgradeRow.style.cssText = 'margin-top:6px;display:flex;justify-content:flex-end;';
+    chopBtn.parentNode.appendChild(forestUpgradeRow);
+  }
+  forestUpgradeRow.innerHTML = `<button class="tool-buy-btn" id="forestUpgradeBtn" onclick="upgradeForest()" style="font-size:0.55rem">+ Row — ${FOREST_UPGRADE_COST}g</button>`;
+  document.getElementById('forestUpgradeBtn').disabled = state.gold < FOREST_UPGRADE_COST || state.dead;
 
   // Market buttons
   const fc1 = effectiveFoodCost(1);
@@ -2061,6 +2284,7 @@ function render() {
   } else {
     // Mine is open and owned
     const intactCount = state.mineNodes.filter(n => n.status === 'intact').length;
+    const digCost = mod().digCost;
     const smeltBtn = state.extraApUnlocked
       ? `<button class="mine-btn dig" id="smeltBtn" onclick="smeltStone()"
            style="margin-top:6px;border-color:#888;background:linear-gradient(135deg,#2a2a2a 0%,#3a3a3a 100%)">
@@ -2072,15 +2296,19 @@ function render() {
         <div class="panel-title"><span class="panel-icon">⛏️</span> The Mine</div>
         <div class="mine-grid" id="mineGrid"></div>
         <button class="mine-btn dig" id="digBtn" onclick="digStone()">
-          Dig Stone — 5 AP → 1 Stone${intactCount === 0 ? ' (depleted)' : ''}
+          Dig Stone — ${digCost} AP → 1 Stone${intactCount === 0 ? ' (depleted)' : ''}
         </button>
         ${smeltBtn}
+        <div style="margin-top:6px;display:flex;justify-content:flex-end;">
+          <button class="tool-buy-btn" id="mineUpgradeBtn" onclick="upgradeMine()" style="font-size:0.55rem">+ Row — ${MINE_UPGRADE_COST}g</button>
+        </div>
       </div>`;
-    document.getElementById('digBtn').disabled = state.ap < MINE_AP_COST || intactCount === 0 || state.dead;
+    document.getElementById('digBtn').disabled = state.ap < digCost || intactCount === 0 || state.dead;
     if (state.extraApUnlocked) {
       document.getElementById('smeltBtn').disabled =
         state.stone < SMELT_STONE_COST || state.gold < SMELT_GOLD_COST || state.ap < SMELT_AP_COST || state.dead;
     }
+    document.getElementById('mineUpgradeBtn').disabled = state.gold < MINE_UPGRADE_COST || state.dead;
     renderMineGrid();
   }
 
@@ -2194,20 +2422,107 @@ function render() {
     banner.className = 'event-banner';
   }
 
-  // End day button
-  document.getElementById('endDayBtn').disabled = state.dead;
+  // ── Seller panel ─────────────────────────────────
+  const sellerSection = document.getElementById('sellerSection');
+  const canSeeSeller = state.seller || state.worker || state.gold >= 400 || state.day >= 15;
+  if (!canSeeSeller) {
+    sellerSection.innerHTML = '';
+  } else if (!state.seller) {
+    sellerSection.innerHTML = `
+      <div class="panel seller-panel">
+        <div class="panel-title"><span class="panel-icon">🛒</span> The Seller</div>
+        <div class="mine-locked">
+          <div class="worker-locked-msg">A merchant's apprentice offers their services. For <strong style="color:var(--gold-bright)">${SELLER_COST} gold</strong> they will automatically sell your resources each day — but they eat one food per day.</div>
+          <button class="mine-btn open" id="hireSellerBtn" onclick="hireSeller()">Hire Seller — ${SELLER_COST} Gold</button>
+        </div>
+      </div>`;
+    document.getElementById('hireSellerBtn').disabled = state.gold < SELLER_COST || state.dead;
+  } else {
+    const s = state.seller;
+    const canUpgrade = s.level < SELLER_MAX_LEVEL;
+    sellerSection.innerHTML = `
+      <div class="panel seller-panel">
+        <div class="panel-title"><span class="panel-icon">🛒</span> The Seller</div>
+        <div class="worker-status">
+          <div class="worker-stat">
+            <span class="worker-stat-label">Level</span>
+            <span class="worker-stat-value" style="color:#a8c878">${s.level} / ${SELLER_MAX_LEVEL}</span>
+          </div>
+          <div class="worker-stat">
+            <span class="worker-stat-label">Sells</span>
+            <span class="worker-stat-value" style="color:#a8c878;font-size:0.65rem">${SELLER_LEVEL_LABEL[s.level]}</span>
+          </div>
+        </div>
+        ${canUpgrade
+          ? `<button class="worker-upgrade-btn" id="sellerUpgradeBtn" onclick="upgradeSeller()" style="border-color:#6a8040">Promote to Level ${s.level + 1} — ${SELLER_UPGRADE_COST} Gold</button>`
+          : `<div class="worker-max-badge">✦ Max Level Reached</div>`
+        }
+      </div>`;
+    if (canUpgrade) {
+      document.getElementById('sellerUpgradeBtn').disabled = state.gold < SELLER_UPGRADE_COST || state.dead;
+    }
+  }
 
-  // Warning
+  // ── Tools panel ──────────────────────────────────
+  const toolsSection = document.getElementById('toolsSection');
+  const showTools = state.axe || state.pickaxe || state.gold >= 250 || state.day >= 12;
+  if (showTools) {
+    const digCostNow = mod().digCost;
+    const chopCostNow = mod().chopCost;
+    toolsSection.innerHTML = `
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-title"><span class="panel-icon">🪓</span> Tools</div>
+        <div class="tool-row">
+          <span class="tool-name">🪓 Iron Axe <small style="color:var(--parchment-dim);font-size:0.72rem">— chop ${CHOP_COST}→${Math.max(1,CHOP_COST-1)} AP</small></span>
+          ${state.axe
+            ? `<span class="tool-owned">✦ Owned</span>`
+            : `<button class="tool-buy-btn" id="buyAxeBtn" onclick="buyAxe()">${AXE_COST}g</button>`
+          }
+        </div>
+        <div class="tool-row">
+          <span class="tool-name">⛏️ Steel Pickaxe <small style="color:var(--parchment-dim);font-size:0.72rem">— dig ${MINE_AP_COST}→${Math.max(1,MINE_AP_COST-1)} AP</small></span>
+          ${state.pickaxe
+            ? `<span class="tool-owned">✦ Owned</span>`
+            : `<button class="tool-buy-btn" id="buyPickaxeBtn" onclick="buyPickaxe()">${PICKAXE_COST}g</button>`
+          }
+        </div>
+      </div>`;
+    if (!state.axe)      document.getElementById('buyAxeBtn')?.setAttribute('disabled', state.gold < AXE_COST || state.dead ? 'true' : null);
+    if (!state.pickaxe)  document.getElementById('buyPickaxeBtn')?.setAttribute('disabled', state.gold < PICKAXE_COST || state.dead ? 'true' : null);
+    if (!state.axe && document.getElementById('buyAxeBtn'))
+      document.getElementById('buyAxeBtn').disabled = state.gold < AXE_COST || state.dead;
+    if (!state.pickaxe && document.getElementById('buyPickaxeBtn'))
+      document.getElementById('buyPickaxeBtn').disabled = state.gold < PICKAXE_COST || state.dead;
+  } else {
+    toolsSection.innerHTML = '';
+  }
+
+  // ── Cabin section ─────────────────────────────────
+  const cabinSection = document.getElementById('cabinSection');
+  const pct = Math.min(100, Math.round((state.gold / CABIN_COST) * 100));
+  const showCabin = state.gold >= CABIN_COST * 0.5 || state.day >= 50;
+  cabinSection.innerHTML = `
+    ${showCabin ? `
+      <button class="cabin-btn" id="cabinBtn" onclick="buildCabin()">
+        🏠 Build the Cabin — ${CABIN_COST.toLocaleString()} Gold
+      </button>
+      <div class="cabin-progress">${state.gold >= CABIN_COST ? 'You have enough. Build it.' : `${state.gold.toLocaleString()} / ${CABIN_COST.toLocaleString()} — ${pct}%`}</div>
+    ` : ''}
+    <button class="end-day-btn" id="endDayBtn" onclick="endDay()" style="margin-top:8px;">
+      ☽ Rest &amp; End the Day
+    </button>`;
+  document.getElementById('endDayBtn').disabled = state.dead;
+  if (showCabin) document.getElementById('cabinBtn').disabled = state.gold < CABIN_COST || state.dead;
   const warn = document.getElementById('warningStrip');
   const foodCostToday = effectiveFoodCost(1);
-  const dailyFoodNeeded = state.worker ? 2 : 1;
+  const dailyMouths = 1 + (state.worker ? 1 : 0) + (state.seller ? 1 : 0);
   if (state.food === 0 && !state.dead) {
     warn.textContent = '⚠ You have no food — end the day and you will starve.';
     warn.className = 'warning-strip visible';
-  } else if (state.worker && state.food === 1 && !state.dead) {
-    warn.textContent = '⚠ Only 1 food left — you and your worker may fight. One of you will not survive.';
+  } else if (state.food < dailyMouths && state.food > 0 && !state.dead) {
+    warn.textContent = `⚠ Only ${state.food} ration${state.food > 1 ? 's' : ''} for ${dailyMouths} mouths — someone may die tonight.`;
     warn.className = 'warning-strip visible';
-  } else if (state.food < dailyFoodNeeded && state.wood === 0 && state.gold < foodCostToday) {
+  } else if (state.food < dailyMouths && state.wood === 0 && state.gold < foodCostToday) {
     warn.textContent = '⚠ Not enough food for tomorrow. Chop and sell now.';
     warn.className = 'warning-strip visible';
   } else if (state.ap < chopCost && standingCount > 0 && state.wood === 0 && state.gold < foodCostToday) {
@@ -2266,6 +2581,13 @@ function clearLog() {
 //  BOOT
 // ═══════════════════════════════
 newGame();
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
+    e.preventDefault();
+    endDay();
+  }
+});
 </script>
 </body>
 </html>
