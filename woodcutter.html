@@ -1472,9 +1472,9 @@ function newGame() {
     eventCooldown: 0,
     // Market — live price multipliers per category
     market: {
-      wood:     { mult: 1.0, downturnsLeft: 0, upturnsLeft: 0 },
-      stone:    { mult: 1.0, downturnsLeft: 0, upturnsLeft: 0 },
-      precious: { mult: 1.0, downturnsLeft: 0, upturnsLeft: 0 },
+      wood:     { mult: 1.0, downturnsLeft: 0, upturnLeft: 0 },
+      stone:    { mult: 1.0, downturnsLeft: 0, upturnLeft: 0 },
+      precious: { mult: 1.0, downturnsLeft: 0, upturnLeft: 0 },
     },
     // Mine
     mineOwned:        false,
@@ -1568,7 +1568,7 @@ function tickMarket() {
     if (m.upturnLeft > 0) {
       m.upturnLeft--;
       if (m.upturnLeft === 0) {
-        m.mult = 0;
+        m.mult = 1.0;
         const label = cat === 'wood' ? 'Wood' : cat === 'stone' ? 'Stone' : 'Precious goods';
         log(`${label} market upturn has ended - prices return to normal.`);
       }
