@@ -1242,9 +1242,7 @@ const TOTAL_AP = 9;
 const CHOP_COST = 3;
 const MARKET_AP_COST = 1;
 const MARKET_AP_COST_BULK = 2;
-const WOOD_VALUE = 5;
-const WOOD_BULK_COUNT = 5;
-const WOOD_BULK_VALUE = 30;
+const WOOD_BUNDLE_VALUE = 20;
 const FOOD_DAY_COST = 5;
 const FOOD_WEEK_COST = 25;
 const FOOD_WEEK_DAYS = 7;
@@ -1532,7 +1530,7 @@ function mod() {
 }
 
 function effectiveWoodValue() {
-  return Math.max(1, Math.round(WOOD_VALUE * state.market.wood.mult * 3)); // 3 logs = base 15g, mult applied
+  return Math.max(1, Math.round(WOOD_BUNDLE_VALUE * state.market.wood.mult));
 }
 
 function effectiveFoodCost(days) {
@@ -1826,11 +1824,12 @@ function sellerAct() {
     return;
   }
 
-  // Level 1+: sell wood (3 logs → 20g)
+  // Level 1+: sell wood (3 logs)
   if (state.wood >= 3) {
+    const val = effectiveWoodValue();
     state.wood -= 3;
-    state.gold += 20;
-    log(`Seller sold 3 logs for 20 gold.`, 'good');
+    state.gold += val;
+    log(`Seller sold 3 logs for ${val} gold.`, 'good');
     return;
   }
 
