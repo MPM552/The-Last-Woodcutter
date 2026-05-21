@@ -1451,7 +1451,7 @@ const EVENT_POOL = [
     duration: 1,
     weight: 2,
     effects: { apMax: 10 },
-    tags: [{ label: 'Max AP: 10', cls: 'pos' }],
+    tags: [{ label: 'Max AP: +1', cls: 'pos' }],
   },
 ];
 
@@ -1460,6 +1460,7 @@ let state = {};
 function newGame() {
   state = {
     day: 1,
+    year: 1,
     gold: 5,
     wood: 0,
     food: 1,
@@ -1471,9 +1472,9 @@ function newGame() {
     eventCooldown: 0,
     // Market — live price multipliers per category
     market: {
-      wood:     { mult: 1.0, downturnsLeft: 0 },
-      stone:    { mult: 1.0, downturnsLeft: 0 },
-      precious: { mult: 1.0, downturnsLeft: 0 },
+      wood:     { mult: 1.0, downturnsLeft: 0, upturnsLeft: 0 },
+      stone:    { mult: 1.0, downturnsLeft: 0, upturnsLeft: 0 },
+      precious: { mult: 1.0, downturnsLeft: 0, upturnsLeft: 0 },
     },
     // Mine
     mineOwned:        false,
@@ -1554,12 +1555,25 @@ function effectiveMetalValue(type) {
 function tickMarket() {
   const DOWNTURN_CHANCE = 0.08;
   const DOWNTURN_DAYS   = 3;
+  const UPTURN_CHANCE   = 0.05;
+  const UPTURN_MULT     = 1.5;
   const DRIFT           = 0.08;   // max ±8% per day
   const MIN_MULT        = 0.7;
   const MAX_MULT        = 1.3;
 
   ['wood', 'stone', 'precious'].forEach(cat => {
     const m = state.market[cat];
+    
+    // Tick active upturn - return to base price after
+    if (m.upturnLeft > 0) {
+      m.upturnLeft--;
+      if (m.upturnLeft === 0) {
+        m.mult = 0;
+        const label = cat === 'wood' ? 'Wood' : cat === 'stone' ? 'Stone' : 'Precious goods';
+        log(`${label} market upturn has ended - prices return to normal.`);
+      }
+      return
+    }
 
     // Tick active downturn
     if (m.downturnsLeft > 0) {
@@ -1573,6 +1587,15 @@ function tickMarket() {
     // Daily drift
     const drift = (Math.random() * 2 - 1) * DRIFT;
     m.mult = Math.min(MAX_MULT, Math.max(MIN_MULT, m.mult + drift));
+
+    // Roll upturn
+    if (Math.random() < UPTURN_CHANCE) {
+      m.mult = UPTURN_MULT;
+      m.upturnLeft = 1;
+      const label = cat === 'wood' ? 'Wood' : cat === 'stone' ? 'Stone' : 'Precious goods';
+      log(`${label} market upturn! Prices at 1.5x today!`, 'good');
+      return;
+    }
 
     // Roll downturn
     if (Math.random() < DOWNTURN_CHANCE) {
@@ -2219,6 +2242,10 @@ function endDay() {
   tickMarket();
 
   state.day++;
+  if (state.day > SEASON_CYCLE) {
+    state.day = 1;
+    state.year++;
+  }
   state.ap = mod().apMax;
   rollBuyOrders();
 
@@ -2233,8 +2260,8 @@ function endDay() {
   log(msg, 'day');
 
   // Win condition — build the cabin (gold threshold + button click)
-  // Day cap at 36475 still ends the run but as a special message
-  if (state.day > 36475) {
+  // Year cap 100, ends the run but as a special message
+  if (state.year > 100) {
     state.won = true;
     showOverlay(true, `You survived 100 years in the forest with ${state.gold} gold. A legend.`);
   }
@@ -2248,9 +2275,7 @@ function endDay() {
 
 function render() {
   // Year / Day
-  const year = Math.ceil(state.day / 365);
-  const dayOfYear = ((state.day - 1) % 365) + 1;
-  document.getElementById('dayVal').textContent = `Y${year} D${dayOfYear}`;
+  document.getElementById('dayVal').textContent = `Y${state.year} D${state.day}`;
   document.getElementById('seasonVal').textContent = SEASONS[getSeason()].name;
 
   // Gold
