@@ -994,21 +994,6 @@
     box-shadow: 0 0 12px rgba(201,147,42,0.3);
   }
 
-  /* ── TOOLTIP / WARNING ── */
-  .warning-strip {
-    background: rgba(139,26,26,0.25);
-    border: 1px solid var(--blood);
-    border-radius: 2px;
-    padding: 8px 12px;
-    font-size: 0.8rem;
-    color: var(--blood-bright);
-    font-style: italic;
-    margin-bottom: 12px;
-    display: none;
-  }
-
-  .warning-strip.visible { display: block; }
-
   /* ── PROGRESS BARS ── */
   .progress-bar {
     height: 3px;
@@ -1087,8 +1072,6 @@
     <div class="ap-pips" id="apPips"></div>
     <div id="apUpgradeSection"></div>
   </div>
-
-  <div id="warningStrip" class="warning-strip"></div>
 
   <!-- EVENT BANNER -->
   <div id="eventBanner" class="event-banner">
@@ -2287,8 +2270,10 @@ function render() {
   // Food
   const foodEl = document.getElementById('foodVal');
   foodEl.textContent = state.food;
-  foodEl.className = 'stat-value' + (state.food < 2 ? ' danger' : '');
-  document.getElementById('foodBox').className = 'stat-box' + (state.food === 0 ? ' danger' : state.food >= 5 ? ' good' : '');
+  const dailyMouthsNeeded = 1 + (state.worker ? 1 : 0) + (state.worker2 ? 1 : 0) + (state.seller ? 1 : 0);
+  const foodDanger state.food < dailyMouthsNeeded
+  foodEl.className = 'stat-value' + (foodDanger ? ' danger' : '');
+  document.getElementById('foodBox').className = 'stat-box' + (foodDanger ? ' danger' : state.food >= 5 ? ' good' : '');
 
   // Wood
   document.getElementById('woodVal').textContent = state.wood;
@@ -2714,24 +2699,6 @@ function render() {
     </button>`;
   document.getElementById('endDayBtn').disabled = state.dead;
   if (showCabin) document.getElementById('cabinBtn').disabled = state.gold < CABIN_COST || state.dead;
-  const warn = document.getElementById('warningStrip');
-  const foodCostToday = effectiveFoodCost(1);
-  const dailyMouths = 1 + (state.worker ? 1 : 0) + (state.worker2 ? 1 : 0) + (state.seller ? 1 : 0);
-  if (state.food === 0 && !state.dead) {
-    warn.textContent = '⚠ You have no food — end the day and you will starve.';
-    warn.className = 'warning-strip visible';
-  } else if (state.food < dailyMouths && state.food > 0 && !state.dead) {
-    warn.textContent = `⚠ Only ${state.food} ration${state.food > 1 ? 's' : ''} for ${dailyMouths} mouths — someone may die tonight.`;
-    warn.className = 'warning-strip visible';
-  } else if (state.food < dailyMouths && state.wood === 0 && state.gold < foodCostToday) {
-    warn.textContent = '⚠ Not enough food for tomorrow. Chop and sell now.';
-    warn.className = 'warning-strip visible';
-  } else if (state.ap < chopCost && standingCount > 0 && state.wood === 0 && state.gold < foodCostToday) {
-    warn.textContent = '⚠ Too few actions remain to chop. Consider resting and hoping the trees hold.';
-    warn.className = 'warning-strip visible';
-  } else {
-    warn.className = 'warning-strip';
-  }
 }
 
 // ═══════════════════════════════
