@@ -1163,6 +1163,7 @@
 
       <div class="panel">
         <div class="panel-title"><span class="panel-icon">⚖️</span> The Market</div>
+        <div id="marketTicker" style="font-size:0.72rem;font-style:italic;color:var(--parchment-dim);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06);">—</div>
 
         <button class="action-btn sell" id="sellBtn" onclick="sellWood3()">
           <span>Sell 3 Logs</span>
@@ -1370,27 +1371,10 @@ const WORKER_TASKS = {
 
 // ═══════════════════════════════
 //  EVENT DEFINITIONS
-//  Each event: { id, title, desc, tone, duration, weight, effects: {} }
-//  effects keys: woodPrice, foodPrice, chopCost, apMax, regrowMod, freeFood, woodLoss
-//    woodPrice:  multiplier on sell value (e.g. 2 = double)
-//    foodPrice:  multiplier on food costs (e.g. 2 = twice as expensive)
-//    chopCost:   flat override for AP cost to chop (e.g. 4)
-//    apMax:      flat override for total AP (e.g. 7)
-//    regrowMod:  extra days added to every regrow roll (e.g. 2 = slower)
-//    freeFood:   days of food granted on event start
-//    woodLoss:   logs lost on event start
+//  effects keys: foodPrice, chopCost, apMax, regrowMod, freeFood, woodLoss
+//  (woodPrice removed — market has its own fluctuation system)
 // ═══════════════════════════════
 const EVENT_POOL = [
-  {
-    id: 'merchant',
-    title: 'Travelling Merchant',
-    desc: 'A merchant caravan passes through, hungry for timber. Wood prices surge.',
-    tone: 'good',
-    duration: 2,
-    weight: 3,
-    effects: { woodPrice: 2 },
-    tags: [{ label: 'Wood: ×2 gold', cls: 'pos' }],
-  },
   {
     id: 'festival',
     title: 'Harvest Festival',
@@ -1452,16 +1436,6 @@ const EVENT_POOL = [
     tags: [{ label: '-2 logs stolen', cls: 'neg' }],
   },
   {
-    id: 'blight',
-    title: 'Market Collapse',
-    desc: 'Rival woodcutters flood the market. Nobody wants your logs at full price.',
-    tone: 'bad',
-    duration: 3,
-    weight: 2,
-    effects: { woodPrice: 0.5 },
-    tags: [{ label: 'Wood: ×½ gold', cls: 'neg' }],
-  },
-  {
     id: 'springrains',
     title: 'Spring Rains',
     desc: 'Warm rains breathe life into the forest. The trees grow back with unusual speed.',
@@ -1497,6 +1471,12 @@ function newGame() {
     won: false,
     activeEvent: null,
     eventCooldown: 0,
+    // Market — live price multipliers per category
+    market: {
+      wood:     { mult: 1.0, downturnsLeft: 0 },
+      stone:    { mult: 1.0, downturnsLeft: 0 },
+      precious: { mult: 1.0, downturnsLeft: 0 },
+    },
     // Mine
     mineOwned:        false,
     mineCollapsed:    false,
@@ -1543,20 +1523,16 @@ function mod() {
   const baseChop = Math.max(1, CHOP_COST - (state.axe ? 1 : 0));
   const baseDig  = Math.max(1, MINE_AP_COST - (state.pickaxe ? 1 : 0));
   return {
-    woodPrice:   e?.effects?.woodPrice  ?? 1,
-    foodPrice:   (e?.effects?.foodPrice ?? 1) * season.foodPriceMult,
-    chopCost:    e?.effects?.chopCost != null ? Math.max(1, e.effects.chopCost - (state.axe ? 1 : 0)) : baseChop,
-    digCost:     baseDig,
-    apMax:       e?.effects?.apMax != null ? e.effects.apMax + (state.extraApUnlocked ? 1 : 0) : baseAp,
-    regrowMod:   (e?.effects?.regrowMod ?? 0) + season.regrowMod,
-    metalRewardMult: season.metalRewardMult,
-    geodeRewardMult: season.geodeRewardMult,
+    foodPrice: (e?.effects?.foodPrice ?? 1) * season.foodPriceMult,
+    chopCost:  e?.effects?.chopCost != null ? Math.max(1, e.effects.chopCost - (state.axe ? 1 : 0)) : baseChop,
+    digCost:   baseDig,
+    apMax:     e?.effects?.apMax != null ? e.effects.apMax + (state.extraApUnlocked ? 1 : 0) : baseAp,
+    regrowMod: (e?.effects?.regrowMod ?? 0) + season.regrowMod,
   };
 }
 
-function effectiveWoodValue(bulk) {
-  const base = bulk ? WOOD_BULK_VALUE : WOOD_VALUE;
-  return Math.max(1, Math.round(base * mod().woodPrice));
+function effectiveWoodValue() {
+  return Math.max(1, Math.round(WOOD_VALUE * state.market.wood.mult * 3)); // 3 logs = base 15g, mult applied
 }
 
 function effectiveFoodCost(days) {
@@ -1565,9 +1541,49 @@ function effectiveFoodCost(days) {
 }
 
 function effectiveGeodeValue(tierIdx) {
-  const base = GEODE_TIERS[tierIdx].value;
-  // geode prices boosted by merchant event, crushed by blight, and by summer season
-  return Math.max(1, Math.round(base * mod().woodPrice * mod().geodeRewardMult));
+  return Math.max(1, Math.round(GEODE_TIERS[tierIdx].value * state.market.precious.mult));
+}
+
+function effectiveStoneValue() {
+  return Math.max(1, Math.round(STONE_PAIR_VALUE * state.market.stone.mult));
+}
+
+function effectiveMetalValue(type) {
+  return Math.max(1, Math.round(METALS[type].value * state.market.precious.mult));
+}
+
+// ── Market tick — called each endDay ────────────────
+function tickMarket() {
+  const DOWNTURN_CHANCE = 0.08;
+  const DOWNTURN_DAYS   = 3;
+  const DRIFT           = 0.08;   // max ±8% per day
+  const MIN_MULT        = 0.7;
+  const MAX_MULT        = 1.3;
+
+  ['wood', 'stone', 'precious'].forEach(cat => {
+    const m = state.market[cat];
+
+    // Tick active downturn
+    if (m.downturnsLeft > 0) {
+      m.downturnsLeft--;
+      if (m.downturnsLeft === 0) {
+        log(`${cat.charAt(0).toUpperCase() + cat.slice(1)} market downturn has ended.`);
+      }
+      return; // no further drift while in downturn
+    }
+
+    // Daily drift
+    const drift = (Math.random() * 2 - 1) * DRIFT;
+    m.mult = Math.min(MAX_MULT, Math.max(MIN_MULT, m.mult + drift));
+
+    // Roll downturn
+    if (Math.random() < DOWNTURN_CHANCE) {
+      m.mult = 0.5;
+      m.downturnsLeft = DOWNTURN_DAYS;
+      const label = cat === 'wood' ? 'Wood' : cat === 'stone' ? 'Stone' : 'Precious goods';
+      log(`${label} market downturn — prices halved for ${DOWNTURN_DAYS} days.`, 'bad');
+    }
+  });
 }
 
 function rollGeodeTier() {
@@ -1644,7 +1660,7 @@ function sellMetal(type) {
   const alwaysDemand = METALS[type].alwaysDemand;
   if (!alwaysDemand && !state.buyOrders.includes(type)) return;
   state.metals[type]--;
-  const value = Math.max(1, Math.round(METALS[type].value * mod().metalRewardMult));
+  const value = effectiveMetalValue(type);
   state.gold += value;
   state.ap   -= MARKET_AP_COST;
   document.getElementById('goldVal').classList.add('spinning');
@@ -1783,8 +1799,7 @@ function sellerAct() {
     let sold = 0;
     for (const [key] of heldMetals) {
       if (sold >= 2) break;
-      const baseVal = Math.max(1, Math.round(METALS[key].value * m.metalRewardMult));
-      const val = Math.floor(baseVal * 0.9);
+      const val = Math.floor(effectiveMetalValue(key) * 0.9);
       state.metals[key]--;
       state.gold += val;
       log(`Seller sold 1 ${METALS[key].label} for ${val} gold (90% rate).`, 'good');
@@ -1804,7 +1819,7 @@ function sellerAct() {
 
   // Level 2+: try stone pairs
   if (level >= 2 && state.stone >= 2) {
-    const val = Math.round(STONE_PAIR_VALUE * m.woodPrice);
+    const val = effectiveStoneValue();
     state.stone -= 2;
     state.gold += val;
     log(`Seller sold 2 stone for ${val} gold.`, 'good');
@@ -1984,13 +1999,13 @@ function digStone() {
 
 function sellStone() {
   if (state.stone < 2 || state.ap < MARKET_AP_COST_BULK) return;
-  const val = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
+  const val = effectiveStoneValue();
   state.stone -= 2;
   state.gold += val;
   state.ap -= MARKET_AP_COST_BULK;
   document.getElementById('goldVal').classList.add('spinning');
   setTimeout(() => document.getElementById('goldVal').classList.remove('spinning'), 300);
-  log(`Sold 2 stone for ${val} gold. Total: ${state.gold} gold.`, 'good');
+  log(`Sold 2 stone for ${val} gold.`, 'good');
   render();
 }
 
@@ -2064,14 +2079,14 @@ function chopWood() {
 
 function sellWood3() {
   if (state.wood < 3 || state.ap < 2) return;
+  const val = effectiveWoodValue();
   state.wood -= 3;
-  state.gold += 20;
+  state.gold += val;
   state.ap -= 2;
-
   const el = document.getElementById('goldVal');
   el.classList.add('spinning');
   setTimeout(() => el.classList.remove('spinning'), 300);
-  log(`Sold 3 logs for 20 gold. Total: ${state.gold} gold.`, 'good');
+  log(`Sold 3 logs for ${val} gold.`, 'good');
   render();
 }
 
@@ -2199,8 +2214,10 @@ function endDay() {
     }
   }
 
-  // Roll for new event BEFORE incrementing day (so it fires on the new day's open)
+  // Roll for new event BEFORE incrementing day
   rollEvent();
+  // Tick market prices
+  tickMarket();
 
   state.day++;
   state.ap = mod().apMax;
@@ -2313,12 +2330,15 @@ function render() {
     document.getElementById('forestUpgradeBtn').disabled = state.gold < FOREST_UPGRADE_COST || state.dead;
   }
 
-  // Market buttons
+  // Market buttons — live prices
   const fc1 = effectiveFoodCost(1);
   const fc7 = effectiveFoodCost(7);
-  const s3btn = document.getElementById('sellBtn');
+  const woodSellVal  = effectiveWoodValue();
+  const stoneSellVal = effectiveStoneValue();
+  const s3btn  = document.getElementById('sellBtn');
   const fd1btn = document.getElementById('buyDayBtn');
   const fd7btn = document.getElementById('buyWeekBtn');
+  s3btn.querySelector('.btn-cost').textContent  = `+${woodSellVal} gold · 2 AP`;
   fd1btn.querySelector('.btn-cost').textContent = `${fc1} gold · 1 AP`;
   fd7btn.querySelector('.btn-cost').textContent = `${fc7} gold · 2 AP`;
   s3btn.disabled  = state.wood < 3 || state.ap < 2 || state.dead;
@@ -2326,16 +2346,31 @@ function render() {
   fd7btn.disabled = state.gold < fc7 || state.ap < MARKET_AP_COST_BULK || state.dead;
 
   // Stone & geode sell buttons
-  const stoneVal = Math.round(STONE_PAIR_VALUE * mod().woodPrice);
   const sSbtn  = document.getElementById('sellStoneBtn');
   const sGbtn  = document.getElementById('sellGeodeBtn');
-  sSbtn.querySelector('#sellStoneCost').textContent = `+${stoneVal} gold · 2 AP`;
+  sSbtn.querySelector('#sellStoneCost').textContent = `+${stoneSellVal} gold · 2 AP`;
   const nextGeode = state.geodes[0];
   sGbtn.querySelector('#sellGeodeCost').textContent = nextGeode
     ? `+${effectiveGeodeValue(nextGeode.tierIdx)} gold · 1 AP (${GEODE_TIERS[nextGeode.tierIdx].label})`
     : '+? gold · 1 AP';
   sSbtn.disabled = state.stone < 2 || state.ap < MARKET_AP_COST_BULK || state.dead;
   sGbtn.disabled = state.geodes.length === 0 || state.ap < MARKET_AP_COST || state.dead;
+
+  // ── Market ticker strip ─────────────────────────
+  const ticker = document.getElementById('marketTicker');
+  if (ticker) {
+    const fmt = (mult, cat) => {
+      const pct = Math.round(mult * 100);
+      const down = state.market[cat].downturnsLeft > 0;
+      const color = down ? 'var(--blood-bright)' : mult >= 1.1 ? '#88cc66' : mult <= 0.85 ? '#e09858' : 'var(--parchment-dim)';
+      const label = down ? `↓ DOWNTURN (${state.market[cat].downturnsLeft}d)` : `${pct}%`;
+      return `<span style="color:${color}">${label}</span>`;
+    };
+    ticker.innerHTML =
+      `Wood ${fmt(state.market.wood.mult,'wood')} &nbsp;·&nbsp; ` +
+      `Stone ${fmt(state.market.stone.mult,'stone')} &nbsp;·&nbsp; ` +
+      `Precious ${fmt(state.market.precious.mult,'precious')}`;
+  }
 
   // ── Mine panel ──────────────────────────────────
   const mineSection = document.getElementById('mineSection');
@@ -2533,6 +2568,9 @@ function render() {
     document.getElementById(valId).textContent   = state.metals[key];
     document.getElementById(rowId).style.display  = show ? '' : 'none';
     document.getElementById(btnId).style.display  = show ? '' : 'none';
+    // Update live price on button
+    const liveVal = effectiveMetalValue(key);
+    document.getElementById(btnId).querySelector('.btn-cost').textContent = `+${liveVal} gold · 1 AP`;
     const badge = document.getElementById(badgeId);
     badge.textContent = isAlwaysDemand ? 'always' : (inDemand ? 'in demand' : 'no orders');
     badge.className   = 'demand-badge ' + (inDemand ? 'active' : 'inactive');
