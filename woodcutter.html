@@ -2271,7 +2271,7 @@ function render() {
   const foodEl = document.getElementById('foodVal');
   foodEl.textContent = state.food;
   const dailyMouthsNeeded = 1 + (state.worker ? 1 : 0) + (state.worker2 ? 1 : 0) + (state.seller ? 1 : 0);
-  const foodDanger state.food < dailyMouthsNeeded
+  const foodDanger = state.food < dailyMouthsNeeded;
   foodEl.className = 'stat-value' + (foodDanger ? ' danger' : '');
   document.getElementById('foodBox').className = 'stat-box' + (foodDanger ? ' danger' : state.food >= 5 ? ' good' : '');
 
