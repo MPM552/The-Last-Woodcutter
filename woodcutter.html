@@ -405,7 +405,6 @@
 
   /* ── AP UPGRADE ── */
   .ap-upgrade {
-    margin-top: 10px;
     padding: 9px 14px;
     background: rgba(201,147,42,0.08);
     border: 1px solid var(--gold-dim);
@@ -420,6 +419,7 @@
     color: var(--parchment-dim);
     font-style: italic;
     line-height: 1.4;
+    flex: 1;
   }
   .ap-upgrade-label strong { color: var(--gold-bright); font-style: normal; }
   .ap-upgrade-btn {
@@ -443,7 +443,6 @@
   }
   .ap-upgrade-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .ap-unlocked-badge {
-    margin-top: 10px;
     font-size: 0.72rem;
     color: #88cc66;
     font-style: italic;
@@ -1070,15 +1069,17 @@
   <div class="actions-section">
     <div class="section-title">Action Points — Day's Allowance</div>
     <div class="ap-pips" id="apPips"></div>
-    <div id="apUpgradeSection"></div>
   </div>
 
-  <!-- EVENT BANNER -->
-  <div id="eventBanner" class="event-banner">
-    <span class="event-duration" id="eventDuration"></span>
-    <div class="event-title" id="eventTitle"></div>
-    <div class="event-desc" id="eventDesc"></div>
-    <div class="event-effects" id="eventEffects"></div>
+  <!-- NOTIFICATIONS AREA: AP Upgrade & Events -->
+  <div id="notificationsArea" style="display: flex; flex-direction: column; gap: 8px;">
+    <div id="apUpgradeSection"></div>
+    <div id="eventBanner" class="event-banner">
+      <span class="event-duration" id="eventDuration"></span>
+      <div class="event-title" id="eventTitle"></div>
+      <div class="event-desc" id="eventDesc"></div>
+      <div class="event-effects" id="eventEffects"></div>
+    </div>
   </div>
 
   <!-- MAIN GRID: 3 columns -->
@@ -1188,6 +1189,11 @@
         <button class="action-btn buy" id="buyWeekBtn" onclick="buyFood(7)">
           <span>Buy Food (1 week)</span>
           <span class="btn-cost">25 gold · 1 AP</span>
+        </button>
+
+        <button class="action-btn buy" id="buyApBtn" onclick="buyExtraAp()" style="display:none;border-color:var(--gold);">
+          <span>Extra Action Point</span>
+          <span class="btn-cost">500 gold</span>
         </button>
 
       </div>
@@ -2365,6 +2371,18 @@ function render() {
   sSbtn.disabled = state.stone < 2 || state.ap < MARKET_AP_COST_BULK || state.dead;
   sGbtn.disabled = state.geodes.length === 0 || state.ap < MARKET_AP_COST || state.dead;
 
+  // AP Upgrade button — show when gold >= 400, highlight when purchaseable >= 500
+  const apBtn = document.getElementById('buyApBtn');
+  const showApBtn = state.gold >= 400 && !state.extraApUnlocked && state.mineOwned;
+  apBtn.style.display = showApBtn ? '' : 'none';
+  if (showApBtn) {
+    const canAfford = state.gold >= EXTRA_AP_COST;
+    apBtn.disabled = !canAfford || state.dead;
+    apBtn.style.borderColor = canAfford ? 'var(--gold)' : 'var(--gold-dim)';
+    apBtn.style.backgroundColor = canAfford ? 'rgba(201,147,42,0.25)' : 'rgba(201,147,42,0.12)';
+    apBtn.style.boxShadow = canAfford ? '0 0 8px rgba(201,147,42,0.25)' : 'none';
+  }
+
   // ── Market ticker strip ─────────────────────────
   const ticker = document.getElementById('marketTicker');
   if (ticker) {
@@ -2546,19 +2564,16 @@ function render() {
     }
   }
 
-  // ── Seller panel ─────────────────────────────────
-  const apSec = document.getElementById('apUpgradeSection');
-  if (state.extraApUnlocked) {
-    apSec.innerHTML = `<div class="ap-unlocked-badge">✦ Extra Action Point unlocked — Forge active</div>`;
-  } else if (state.mineOwned && state.gold >= 200) {
-    apSec.innerHTML = `
-      <div class="ap-upgrade">
-        <span class="ap-upgrade-label">A <strong>permanent extra Action Point</strong> can be purchased — and unlocks the Forge.</span>
-        <button class="ap-upgrade-btn" id="apUpgradeBtn" onclick="buyExtraAp()">500 Gold</button>
-      </div>`;
-    document.getElementById('apUpgradeBtn').disabled = state.gold < EXTRA_AP_COST || state.dead;
-  } else {
-    apSec.innerHTML = '';
+  // ── AP Upgrade button ───────────────────────────
+  const apBtn = document.getElementById('buyApBtn');
+  const showApBtn = state.gold >= 400 && !state.extraApUnlocked && state.mineOwned;
+  apBtn.style.display = showApBtn ? '' : 'none';
+  if (showApBtn) {
+    const canAfford = state.gold >= EXTRA_AP_COST;
+    apBtn.disabled = !canAfford || state.dead;
+    apBtn.className = 'action-btn buy' + (canAfford ? ' purchaseable' : '');
+    apBtn.style.borderColor = canAfford ? 'var(--gold)' : '';
+    apBtn.style.color = canAfford ? 'var(--gold-bright)' : '';
   }
 
   // ── Metal sell buttons ───────────────────────────
