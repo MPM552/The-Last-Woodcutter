@@ -1221,7 +1221,7 @@
     <div id="workerSection"></div>
     <div id="worker2Section"></div>
     <div id="sellerSection"></div>
-    <div id="toolSection"></div>
+    <div id="toolsSection"></div>
   </div>
   
   <!-- GEODE FLASH -->
@@ -1746,7 +1746,7 @@ function workerAct(workerKey) {
     for (let i = 0; i < chopCount; i++) {
       const avail = state.trees.filter(t => t.status === 'standing');
       if (avail.length === 0) break;
-      const tree = standing[Math.floor(Math.random() * standing.length)];
+      const tree = avail[Math.floor(Math.random() * avail.length)];
       const baseRegrow = Math.floor(Math.random() * 4) + 2;
       tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
       tree.status = 'stump';
@@ -2491,8 +2491,9 @@ function render() {
   if (!canSeeWorker) {
     workerSection.innerHTML = `
       <div class="panel worker-panel">
-        <div class="panel-title"><span class="panel-icon">👷‍♂️</span> The Worker</div>
-        // PICK BACK UP HERE
+        <div class="panel-title"><span class="panel-icon">👷</span> The Worker</div>
+        <div class="mine-locked"><div class="worker-locked-msg"> style="color:var(--parchment-dim;font-style:italic;">Not yet available.</div></div>
+      </div>`;
   } else if (!state.worker) {
     workerSection.innerHTML = `
       <div class="panel worker-panel">
@@ -2544,7 +2545,11 @@ function render() {
   if (worker2Section) {
     const canSeeW2 = state.worker && (state.worker2 || state.gold >= 450 || state.day >= 20);
     if (!canSeeW2) {
-      worker2Section.innerHTML = '';
+      worker2Section.innerHTML = `
+        <div class="panel worker-panel">
+          <div class="panel-title"><span class="panel-icon">👷</span> Second Worker</div>
+          <div class="mine-locked"><div class="worker-locked-msg" style="color:var(--parchment-dim;font-style:italic;">Not yet available.</div></div>
+        </div>`;
     } else if (!state.worker2) {
       worker2Section.innerHTML = `
         <div class="panel worker-panel">
@@ -2584,10 +2589,11 @@ function render() {
   }
 
   // ── Seller panel ─────────────────────────────────
+  if (state.gold >= 400 && state.mineOwned) state.apUpgradeRevealed = true;
   const apSec = document.getElementById('apUpgradeSection');
   if (state.extraApUnlocked) {
     apSec.innerHTML = `<div class="ap-unlocked-badge">✦ Extra Action Point unlocked — Forge active</div>`;
-  } else if (state.mineOwned && state.gold >= 200) {
+  } else if (state.apUpgradeRevealed) {
     apSec.innerHTML = `
       <div class="ap-upgrade">
         <span class="ap-upgrade-label">A <strong>permanent extra Action Point</strong> can be purchased — and unlocks the Forge.</span>
@@ -2649,7 +2655,11 @@ function render() {
   const sellerSection = document.getElementById('sellerSection');
   const canSeeSeller = state.seller || state.worker || state.gold >= 400 || state.day >= 15;
   if (!canSeeSeller) {
-    sellerSection.innerHTML = '';
+    sellerSection.innerHTML = `
+      <div class="panel seller-panel">
+        <div class="panel-title"><span class="panel-icon">🛒</span> The Seller</div>
+        <div class="mine-locked"><div class="worker-locked-msg" style="color:var(--parchment-dim;font-style:italic;">Not yet available.</div></div>
+      </div>`;
   } else if (!state.seller) {
     sellerSection.innerHTML = `
       <div class="panel seller-panel">
@@ -2693,7 +2703,7 @@ function render() {
     const digCostNow = mod().digCost;
     const chopCostNow = mod().chopCost;
     toolsSection.innerHTML = `
-      <div class="panel" style="margin-top:10px;">
+      <div class="panel" style="margin-top:0;">
         <div class="panel-title"><span class="panel-icon">🪓</span> Tools</div>
         <div class="tool-row">
           <span class="tool-name">🪓 Iron Axe <small style="color:var(--parchment-dim);font-size:0.72rem">— chop ${CHOP_COST}→${Math.max(1,CHOP_COST-1)} AP</small></span>
@@ -2717,7 +2727,11 @@ function render() {
     if (!state.pickaxe && document.getElementById('buyPickaxeBtn'))
       document.getElementById('buyPickaxeBtn').disabled = state.gold < PICKAXE_COST || state.dead;
   } else {
-    toolsSection.innerHTML = '';
+    toolsSection.innerHTML = `
+      <div class="panel">
+        <div class="panel-title"><span class="panel-icon">🪓</span> Tools</div>
+        <div class="mine-locked"><div class="worker-locked-msg" style="color:var(--parchment-dim;font-style:italic;">Not yet available.</div></div>
+      </div>`;
   }
 
   // ── Cabin section ─────────────────────────────────
