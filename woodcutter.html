@@ -1969,13 +1969,13 @@ function digStone() {
   const baseRegenDays = Math.floor(Math.random() * 5) + 4; // 4-8 days
   const season = SEASONS[getSeason()];
   node.regenIn = Math.max(1, baseRegenDays + season.mineRegrowMod);
+  
+  node.status = 'regen';
 
   const nodeEl = document.getElementById('mineNode-' + node.id);
   if (nodeEl) {
     nodeEl.classList.add('crumbling');
-    setTimeout(() => { node.status = 'regen'; render(); }, 300);
-  } else {
-    node.status = 'regen';
+    setTimeout(() => {render(); }, 300);
   }
 
   state.ap -= digCost;
