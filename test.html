@@ -533,27 +533,34 @@
   .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .btn-cost { font-style: italic; font-size: 0.72rem; color: var(--parchment-dim); }
 
-  /* ── EVENT BANNER ── */
-  .event-banner {
-    border-radius: 3px; border: 1px solid; padding: 10px 14px; margin-bottom: 12px;
-    display: none; position: relative; overflow: hidden;
+  /* ── EVENT LOG ENTRY ── */
+  .log-entry.event {
+    border-radius: 3px; border: 1px solid; padding: 8px 10px; margin: 6px 0;
+    position: relative; overflow: hidden;
   }
-  .event-banner.visible { display: block; }
-  .event-banner::before { content: ''; position: absolute; inset: 0; opacity: 0.05; background: repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px); }
-  .event-banner.bad { background: rgba(139,26,26,0.2); border-color: var(--blood); }
-  .event-banner.good { background: rgba(58,74,42,0.3); border-color: var(--moss-light); }
-  .event-banner.neutral { background: rgba(26,42,58,0.35); border-color: #2a5a7a; }
-  .event-title { font-family: 'Cinzel Decorative', serif; font-size: 0.7rem; letter-spacing: 0.12em; margin-bottom: 2px; }
-  .event-banner.bad .event-title { color: var(--blood-bright); }
-  .event-banner.good .event-title { color: #88cc66; }
-  .event-banner.neutral .event-title { color: #6ab0d0; }
-  .event-desc { font-size: 0.8rem; font-style: italic; color: var(--parchment-dim); line-height: 1.4; }
-  .event-effects { margin-top: 4px; font-size: 0.7rem; color: var(--parchment-dim); display: flex; flex-wrap: wrap; gap: 5px; }
-  .effect-tag { background: rgba(0,0,0,0.3); border-radius: 2px; padding: 2px 6px; font-style: normal; }
+  .log-entry.event::before {
+    content: ''; position: absolute; inset: 0; opacity: 0.05; pointer-events: none;
+    background: repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px); 
+  }
+  .log-entry.event.bad { background: rgba(139,26,26,0.15); border-color: var(--blood); color: var(--parchment); }
+  .log-entry.event.good { background: rgba(58,74,42,0.15); border-color: var(--moss-light); color: var(--parchment); }
+  .log-entry.event.neutral { background: rgba(26,42,58,0.2); border-color: #2a5a7a; color: var(--parchment); }
+  
+  .event-log-title { 
+    font-family: 'Cinzel Decorative', serif; font-size: 0.75rem; letter-spacing: 0.1em; 
+    font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .event-log-title-text::before { content: '⚑ '; }
+  .log-entry.event.bad .event-log-title-text { color: var(--blood-bright); }
+  .log-entry.event.good .event-log-title-text { color: #88cc66; }
+  
+  .event-log-duration { font-size: 0.65rem; color: var(--parchment-dim); font-style: italic; font-family: 'Crimson Pro', serif; font-weight: normal; letter-spacing: normal; }
+  .event-log-desc { font-size: 0.75rem; font-style: italic; color: var(--parchment-dim); line-height: 1.3; margin-bottom: 6px; }
+  
+  .event-log-tags { font-size: 0.65rem; display: flex; gap: 4px; flex-wrap: wrap; }
+  .effect-tag { background: rgba(0,0,0,0.4); border-radius: 2px; padding: 2px 5px; font-style: normal; white-space: nowrap; }
   .effect-tag.neg { color: var(--blood-bright); }
   .effect-tag.pos { color: #88cc66; }
-  .effect-tag.neu { color: #6ab0d0; }
-  .event-duration { position: absolute; top: 8px; right: 10px; font-size: 0.65rem; color: var(--parchment-dim); font-style: italic; }
 
   /* ── LOG ── */
   .log-panel {
@@ -650,13 +657,6 @@
     <div class="spacebar-hint">
       Press <strong>Space</strong> to end the day
     </div>
-  </div>
-
-  <div id="eventBanner" class="event-banner">
-    <span class="event-duration" id="eventDuration"></span>
-    <div class="event-title" id="eventTitle"></div>
-    <div class="event-desc" id="eventDesc"></div>
-    <div class="event-effects" id="eventEffects"></div>
   </div>
 
   <div class="main-grid">
@@ -838,7 +838,7 @@ const SELLER_LEVEL_LABEL = ['', 'Sells Wood', 'Sells Wood · Stone · Geodes', '
 const AXE_COST      = 300;   
 const PICKAXE_COST  = 500;   
 
-const CABIN_COST    = 10000;
+const CABIN_COST    = 5000;
 
 const FOREST_UPGRADE_COST = 300;  
 const MINE_UPGRADE_COST   = 400;  
@@ -1150,11 +1150,30 @@ function showGeodeFlash(tierIdx) {
 function rollEvent() {
   if (state.activeEvent || state.eventCooldown > 0) { if (state.eventCooldown > 0) state.eventCooldown--; return; }
   if (state.day < 3 || Math.random() > 0.35) return;
+  
   const totalWeight = EVENT_POOL.reduce((s, e) => s + e.weight, 0);
   let roll = Math.random() * totalWeight, chosen = null;
   for (const ev of EVENT_POOL) { roll -= ev.weight; if (roll <= 0) { chosen = ev; break; } }
   if (!chosen) chosen = EVENT_POOL[0];
-  state.activeEvent = { ...chosen, daysLeft: chosen.duration }; state.eventCooldown = 0;
+  
+  state.activeEvent = { ...chosen, daysLeft: chosen.duration }; 
+  state.eventCooldown = 0;
+
+  // Build the rich HTML block for the log
+  const tagsHtml = chosen.tags.map(t => `<span class="effect-tag ${t.cls}">${t.label}</span>`).join('');
+  const durationText = chosen.duration === 1 ? 'Lasts today' : `${chosen.duration} days`;
+  const evHtml = `
+    <div class="event-log-title">
+      <span class="event-log-title-text">${chosen.title}</span>
+      <span class="event-log-duration">${durationText}</span>
+    </div>
+    <div class="event-log-desc">${chosen.desc}</div>
+    <div class="event-log-tags">${tagsHtml}</div>
+  `;
+  
+  logHtml(evHtml, `event ${chosen.tone}`);
+
+  // Process instant effects
   if (chosen.effects.freeFood) { state.food += chosen.effects.freeFood; log(`${chosen.title}: received ${chosen.effects.freeFood} days of free food.`, 'good'); }
   if (chosen.effects.woodLoss) { const lost = Math.min(state.wood, chosen.effects.woodLoss); state.wood -= lost; if (lost > 0) log(`${chosen.title}: lost ${lost} log(s) to bandits.`, 'bad'); }
 }
@@ -1249,6 +1268,14 @@ function buyFood(days) {
   if (state.gold < cost || state.ap < ap_cost) return;
   state.gold -= cost; state.food += days; state.ap -= ap_cost;
   log(`Bought ${days === 1 ? 'one day\'s' : 'a week\'s'} worth of food for ${cost} gold.`); render();
+}
+
+function logHtml(htmlContent, cls) {
+  const panel = document.getElementById('logPanel'), entry = document.createElement('div');
+  entry.className = 'log-entry' + (cls ? ' ' + cls : ''); 
+  // Add a subtle day marker at the top of the block
+  entry.innerHTML = `<div style="font-size:0.65rem;color:var(--gold-dim);margin-bottom:4px;">> Day ${state.day}</div>` + htmlContent;
+  panel.insertBefore(entry, panel.firstChild);
 }
 
 function endDay() {
@@ -1464,7 +1491,6 @@ function render() {
       <div class="panel worker-panel">
         <div class="panel-title"><span class="panel-icon">👷</span> The Worker</div>
         <div class="mine-locked">
-          <div class="worker-locked-msg">A labourer chops wood each day. (Eats 1 food/day)</div>
           <button class="mine-btn open" id="hireWorkerBtn" onclick="hireWorker()">Hire Worker — ${WORKER_COST} Gold</button>
         </div>
       </div>`;
@@ -1500,7 +1526,6 @@ function render() {
         <div class="panel worker-panel">
           <div class="panel-title"><span class="panel-icon">👷</span> Second Worker</div>
           <div class="mine-locked">
-            <div class="worker-locked-msg">Another labourer for double the rate. (Eats 1 food/day)</div>
             <button class="mine-btn open" id="hireWorker2Btn" onclick="hireWorker2()">Hire Worker 2 — ${WORKER2_COST} Gold</button>
           </div>
         </div>`;
@@ -1561,17 +1586,6 @@ function render() {
     document.getElementById(btnId).disabled = !hasMetal || !inDemand || state.ap < MARKET_AP_COST || state.dead;
   });
 
-  const banner = document.getElementById('eventBanner');
-  if (state.activeEvent) {
-    const ev = state.activeEvent;
-    banner.className = `event-banner visible ${ev.tone}`;
-    document.getElementById('eventTitle').textContent = ev.title;
-    document.getElementById('eventDesc').textContent = ev.desc;
-    document.getElementById('eventDuration').textContent = ev.daysLeft === 1 ? 'last day' : `${ev.daysLeft} days remaining`;
-    const fx = document.getElementById('eventEffects'); fx.innerHTML = '';
-    ev.tags.forEach(t => { const span = document.createElement('span'); span.className = `effect-tag ${t.cls}`; span.textContent = t.label; fx.appendChild(span); });
-  } else { banner.className = 'event-banner'; }
-
   const sellerSection = document.getElementById('sellerSection');
   const canSeeSeller = state.seller || state.worker || state.gold >= 400 || state.day >= 15;
   if (!canSeeSeller) { sellerSection.innerHTML = ''; } 
@@ -1580,7 +1594,6 @@ function render() {
       <div class="panel seller-panel">
         <div class="panel-title"><span class="panel-icon">🛒</span> The Seller</div>
         <div class="mine-locked">
-          <div class="worker-locked-msg">Auto-sells resources each day. (Eats 1 food/day)</div>
           <button class="mine-btn open" id="hireSellerBtn" onclick="hireSeller()">Hire Seller — ${SELLER_COST} Gold</button>
         </div>
       </div>`;
