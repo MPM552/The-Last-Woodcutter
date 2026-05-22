@@ -903,13 +903,33 @@
     border: 1px solid var(--bark-mid);
     border-radius: 3px;
     padding: 12px;
-    margin-top: 12px;
-    max-height: 150px;
+    margin-top: 0;
+    height: 500px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--bark-mid) transparent;
   }
-
+  .workers-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:12px;
+    margin-top: 16px;
+  }
+  .workers-grid > div {
+    min-height: 180px;
+  }
+  .workers-grid .panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (max-width: 900px) {
+    .workers-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 500px) {
+    .workers-grid { grid-template-columns: 1fr; }
+  }
+  
   .log-entry {
     font-size: 0.8rem;
     padding: 3px 0;
@@ -1097,15 +1117,7 @@
 
     </div>
 
-    <!-- MIDDLE: Worker + Worker2 + Seller + Tools -->
-    <div style="display:flex; flex-direction:column; gap:12px;">
-      <div id="workerSection"></div>
-      <div id="worker2Section"></div>
-      <div id="sellerSection"></div>
-      <div id="toolsSection"></div>
-    </div>
-
-    <!-- RIGHT: Inventory + Market + Cabin -->
+    <!-- MIDDLE: Inventory + Market + Cabin -->
     <div style="display:flex; flex-direction:column; gap:12px;">
 
       <div class="panel">
@@ -1197,8 +1209,21 @@
 
     </div>
 
+    <!-- RIGHT: Chronicle -->
+    <div style="display:flex; flex-direction:column;">
+      <div class="log-panel" id="logPanel"></div>
+    </div>
+  
   </div>
-
+  
+  <!-- WORKERS & SERVICES -->
+  <div class="workers-grid" id="workersGrid" style="display:none;">
+    <div id="workerSection"></div>
+    <div id="worker2Section"></div>
+    <div id="sellerSection"></div>
+    <div id="toolSection"></div>
+  </div>
+  
   <!-- GEODE FLASH -->
   <div class="geode-flash" id="geodeFlash">
     <span class="geode-flash-icon" id="geodeFlashIcon">💎</span>
@@ -1211,10 +1236,8 @@
     <div class="smelt-flash-text" id="smeltFlashText"></div>
   </div>
 
-  <!-- LOG -->
-  <div class="section-title" style="margin-top:16px;">Chronicle</div>
-  <div class="log-panel" id="logPanel"></div>
-
+  
+  
 </div>
 
 <script>
@@ -1466,6 +1489,7 @@ function newGame() {
     stone:            0,
     geodes:           [],
     // Smelting & AP upgrade
+    apUpgradeRevealed: false,
     extraApUnlocked:  false,
     metals:           { iron: 0, aluminum: 0, copper: 0, silver: 0 },
     buyOrders:        [],
@@ -1718,12 +1742,17 @@ function workerAct(workerKey) {
   if (task === 'wood') {
     const standing = state.trees.filter(t => t.status === 'standing');
     if (standing.length === 0) { log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} found no trees to chop today.`); return; }
-    const tree = standing[Math.floor(Math.random() * standing.length)];
-    const baseRegrow = Math.floor(Math.random() * 4) + 2;
-    tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
-    tree.status = 'stump';
-    state.wood += 1;
-    log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} chopped 1 tree — +1 log.`);
+    const chopCount = level >= 2 ? 2 : 1;
+    for (let i = 0; i < chopCount; i++) {
+      const avail = state.trees.filter(t => t.status === 'standing');
+      if (avail.length === 0) break;
+      const tree = standing[Math.floor(Math.random() * standing.length)];
+      const baseRegrow = Math.floor(Math.random() * 4) + 2;
+      tree.regrowIn = Math.max(1, baseRegrow + mod().regrowMod);
+      tree.status = 'stump';
+      state.wood += 1;
+    }
+    log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} chopped ${chopCount} tree${chopCount > 1 ? 's' : ''} — +${chopCount} log${chopCount > 1 ? 's' : ''}.`);
   } else if (task === 'stone') {
     if (!state.mineOwned || state.mineCollapsed) { log(`${workerKey === 'worker' ? 'Worker' : 'Worker 2'} found the mine closed.`); return; }
     const intact = state.mineNodes.filter(n => n.status === 'intact');
@@ -2451,11 +2480,19 @@ function render() {
   sSbtn.style.display = mineEverSeen ? '' : 'none';
   sGbtn.style.display = mineEverSeen ? '' : 'none';
 
+  // ── Workers & Services grid visibility
+  const workersGrid = document.getElementById('workersGrid');
+  const showWorkersSection = state.worker || state.seller || state.gold >= 200 || state.day >= 15;
+  workersGrid.style.display = showWorkersSection ? '' : 'none';
+  
   // ── Worker panel ─────────────────────────────────
   const workerSection = document.getElementById('workerSection');
   const canSeeWorker = state.worker || state.gold >= 200 || state.day >= 10;
   if (!canSeeWorker) {
-    workerSection.innerHTML = '';
+    workerSection.innerHTML = `
+      <div class="panel worker-panel">
+        <div class="panel-title"><span class="panel-icon">👷‍♂️</span> The Worker</div>
+        // PICK BACK UP HERE
   } else if (!state.worker) {
     workerSection.innerHTML = `
       <div class="panel worker-panel">
