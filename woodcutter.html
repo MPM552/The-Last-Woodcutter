@@ -2482,7 +2482,7 @@ function render() {
 
   // ── Workers & Services grid visibility
   const workersGrid = document.getElementById('workersGrid');
-  const showWorkersSection = state.worker || state.seller || state.gold >= 200 || state.day >= 15;
+  const showWorkersSection = state.worker || state.seller || state.gold >= 200 || state.day >= 30;
   workersGrid.style.display = showWorkersSection ? '' : 'none';
   
   // ── Worker panel ─────────────────────────────────
