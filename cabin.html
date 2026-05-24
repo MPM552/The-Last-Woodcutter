@@ -3,144 +3,661 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Cabin</title>
+<title>The Sanctuary</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
   :root {
-    --hearth-dark: #1a0f08;
-    --hearth-glow: #3a2210;
-    --fire: #e88b4b;
-    --parchment: #e8d9b8;
-    --parchment-dim: #b8a888;
+    --bg-color: #f4f4f4;
+    --text-color: #111;
+    --border-color: #111;
+    --highlight: #0000ff;
+    --sprout: #008800;
+    --bloom: #ff00ff;
+    --dead: #888888;
+    --water: #00aaff;
+    --silver: #8a8a8a;
+    --gold: #d4af37;
+    --error: #cc0000;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background-color: var(--hearth-dark);
-    color: var(--parchment);
-    font-family: 'Crimson Pro', Georgia, serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Space Mono', monospace;
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-
-  /* A radial gradient to simulate firelight */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at center, var(--hearth-glow) 0%, var(--hearth-dark) 70%);
-    opacity: 0.5;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .cabin-wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 600px;
-    padding: 40px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid #4a3010;
-    border-radius: 4px;
-    box-shadow: 0 0 40px rgba(0,0,0,0.8);
-  }
-
-  h1 {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 2rem;
-    color: var(--fire);
-    margin-bottom: 20px;
-    letter-spacing: 0.1em;
-  }
-
-  p {
-    font-size: 1.1rem;
-    color: var(--parchment-dim);
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
-
-  .stats-board {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin: 30px 0;
     padding: 20px;
-    border-top: 1px solid #4a3010;
-    border-bottom: 1px solid #4a3010;
-  }
-
-  .stat {
     display: flex;
     flex-direction: column;
+    align-items: center;
   }
 
-  .stat-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #888;
+  /* ── HEADER ── */
+  header {
+    width: 100%; max-width: 900px; border: 2px solid var(--border-color);
+    padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between;
+    align-items: center; background: #fff;
   }
+  .title { font-weight: 700; font-size: 1.5rem; letter-spacing: -1px; }
+  .stats-block { display: flex; gap: 20px; font-size: 0.9rem; font-weight: bold; }
+  .stats-block span { border-bottom: 2px solid var(--border-color); padding-bottom: 2px; }
+  .deadline-warning { color: var(--error); animation: pulseText 1s infinite; border-color: var(--error) !important; }
 
-  .stat-value {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 1.5rem;
-    color: var(--parchment);
+  /* ── TARGET BOARD ── */
+  .target-board {
+  width: 100%; max-width: 900px; 
+  border: 3px solid var(--highlight); /* Thicker border */
+  background: #fff; /* Solid white background instead of transparent */
+  padding: 20px; 
+  margin-bottom: 20px;
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+}
+  .target-info { font-weight: bold; font-size: 0.9rem; text-transform: uppercase; color: var(--highlight); }
+  .target-genes { 
+  display: flex; 
+  gap: 10px; 
+  flex-wrap: wrap; /* Allows wrapping if screen is small */
+}
+
+.target-genes span { 
+  background: #f0f0ff; 
+  border: 2px solid var(--highlight); 
+  padding: 8px 12px; 
+  font-weight: 700;
+  color: var(--highlight);
+  font-size: 1rem; /* Larger font for readability */
+}
+
+  /* ── MAIN WORKSPACE ── */
+  .workspace { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
+  .ap-bar {
+    border: 2px solid var(--border-color); padding: 12px 15px; background: #fff;
+    display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem;
+    transition: background 0.2s, color 0.2s;
   }
+  .ap-bar.grafting { background: var(--highlight); color: #fff; }
+  .ap-pips { display: flex; gap: 8px; }
+  .ap-pips span { display: inline-block; width: 20px; height: 20px; background: currentColor; border: 2px solid currentColor; }
+  .ap-bar:not(.grafting) .ap-pips span.used { background: transparent; border: 2px solid #ccc; }
+  .ap-bar.grafting .ap-pips span.used { background: transparent; border: 2px solid rgba(255,255,255,0.4); }
+
+  /* ── GREENHOUSE GRID ── */
+  .greenhouse { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+  .pot {
+    aspect-ratio: 1; border: 2px solid var(--border-color); background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.1s, transform 0.1s; position: relative;
+  }
+  .pot:hover { background: #eaeaea; }
+  .pot.targetable { animation: pulseBorder 1.5s infinite; }
+  .pot-icon { font-size: 3.5rem; margin-bottom: 10px; line-height: 1; }
+  .pot-status { font-size: 0.8rem; font-weight: bold; text-align: center; line-height: 1.3; }
+  
+  .pot-hydration { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; flex-wrap: wrap; width: 30px; justify-content: flex-end; }
+  .drop { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border-color); }
+  .drop.filled { background: var(--water); border-color: var(--water); }
+
+  .pot.growing .pot-icon { color: var(--sprout); }
+  .pot.bloomed .pot-icon { color: var(--bloom); animation: pulse 2s infinite; }
+  .pot.bloomed { border-color: var(--bloom); box-shadow: inset 0 0 0 2px var(--bloom); }
+  .pot.dead .pot-icon { color: var(--dead); transform: rotate(90deg); }
+  .pot.dead { border-color: var(--dead); color: var(--dead); }
+
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  @keyframes pulseBorder { 0%, 100% { border-color: var(--highlight); } 50% { border-color: #fff; } }
+  @keyframes pulseText { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* ── CONTROLS ── */
+  .end-day-btn {
+    width: 100%; padding: 20px; background: var(--text-color); color: var(--bg-color);
+    border: none; font-family: inherit; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+  }
+  .end-day-btn:hover { background: var(--highlight); }
+  .log { margin-top: 10px; font-size: 0.8rem; color: #555; height: 150px; overflow-y: auto; border: 2px solid #ccc; padding: 10px; background: #fff; }
+
+  /* ── MODALS ── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(244,244,244,0.95); display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .overlay.active { opacity: 1; pointer-events: all; }
+  .prompt-box { background: #fff; border: 3px solid var(--border-color); padding: 30px; max-width: 550px; width: 90%; box-shadow: 15px 15px 0px rgba(0,0,0,0.1); }
+  .prompt-header { font-size: 1.2rem; font-weight: bold; border-bottom: 2px solid; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+  
+  .gene-readout { font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px; background: #f9f9f9; padding: 15px; border: 1px dashed #aaa; }
+  .gene-label { display: inline-block; width: 90px; font-weight: bold; color: #555; }
+  
+  .rarity-0 { color: #000; font-weight: normal; } /* Common */
+  .rarity-1 { color: var(--silver); font-weight: bold; } /* Uncommon */
+  .rarity-2 { color: var(--gold); font-weight: bold; text-shadow: 0px 0px 2px rgba(212,175,55,0.4); } /* Rare */
+  
+  .val-highlight { color: var(--bloom); font-weight: bold; }
+
+  .prompt-options { display: flex; flex-direction: column; gap: 10px; }
+  .prompt-btn {
+    padding: 14px; background: #fff; border: 2px solid var(--border-color);
+    font-family: inherit; font-size: 0.95rem; font-weight: bold; text-align: left; cursor: pointer; display: flex; justify-content: space-between;
+  }
+  .prompt-btn:hover:not(:disabled) { background: var(--highlight); color: #fff; border-color: var(--highlight); }
+  .prompt-btn.submit-btn { border-color: var(--highlight); color: var(--highlight); }
+  .prompt-btn.submit-btn:hover:not(:disabled) { background: var(--highlight); color: #fff; }
+  .prompt-btn:disabled { opacity: 0.3; cursor: not-allowed; border-style: dashed; }
+  .btn-cost { font-size: 0.8rem; opacity: 0.8; }
+
+  /* End Screen Specifics */
+  .end-box { text-align: center; }
+  .end-title { font-size: 2rem; font-weight: bold; margin-bottom: 20px; letter-spacing: -1px; text-transform: uppercase; }
+  .end-title.win { color: var(--highlight); border-bottom: 2px solid var(--highlight); padding-bottom: 10px; }
+  .end-title.lose { color: var(--error); border-bottom: 2px solid var(--error); padding-bottom: 10px; }
+  .end-msg { font-size: 1rem; line-height: 1.6; margin-bottom: 30px; font-weight: bold; }
 </style>
 </head>
 <body>
 
-<div class="cabin-wrapper">
-  <h1>The Hearth</h1>
-  <p id="welcomeText">The door clicks shut. The howling wind becomes a distant memory. You have survived.</p>
-  
-  <div class="stats-board">
-    <div class="stat">
-      <span class="stat-label">Arrived On</span>
-      <span class="stat-value" id="dateArrived">Y1 D1</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Remaining Gold</span>
-      <span class="stat-value" id="goldLeft">0</span>
-    </div>
+<header>
+  <div class="title">Lab: Botanical Synthesis</div>
+  <div class="stats-block">
+    <span id="dateDisplay">50 DAYS REMAINING</span>
+    <span id="goldDisplay">0 GOLD</span>
   </div>
+</header>
 
-  <p style="font-style: italic; font-size: 0.9rem;">The next chapter of the game begins here...</p>
+<div class="target-board" id="targetBoard">
+  <div class="target-info">
+    <div id="targetTitle">CONTRACT 01: MATCH 3/4</div>
+    <div style="font-size: 0.7rem; margin-top: 5px; opacity: 0.7;">TARGET GENOME:</div>
+  </div>
+  <div class="target-genes" id="targetGenes">
+    </div>
+</div>
+
+<div class="workspace">
+  <div class="ap-bar" id="apBar">
+    <span id="apTitle">DAILY ACTION QUOTA</span>
+    <div class="ap-pips" id="apPips"></div>
+  </div>
+  <div class="greenhouse" id="greenhouseGrid"></div>
+  <button class="end-day-btn" onclick="endDay()">Terminate Day [Space]</button>
+  <button class="end-day-btn" style="flex: 1; background: #666;" onclick="undoToStartOfDay()">Undo Day</button>
+  <div class="log" id="systemLog">> INITIATING LAB PROTOCOL. FULFILL CONTRACT WITHIN 50 DAYS.<br></div>
+</div>
+
+<div class="overlay" id="actionModal" onclick="if(event.target===this) closeActionModal()">
+  <div class="prompt-box">
+    <div class="prompt-header">
+      <span id="modalTitle">SLOT 01</span>
+      <button style="background:none;border:none;font-weight:bold;cursor:pointer;font-family:inherit;" onclick="closeActionModal()">[X]</button>
+    </div>
+    <div id="geneDisplay" class="gene-readout" style="display:none;"></div>
+    <div class="prompt-options" id="modalOptions"></div>
+  </div>
+</div>
+
+<div class="overlay" id="endModal">
+  <div class="prompt-box end-box">
+    <div class="end-title" id="endTitle">PROTOCOL COMPLETE</div>
+    <div class="end-msg" id="endMsg">You have successfully engineered the Apex Specimen.</div>
+    <button class="prompt-btn" style="justify-content: center;" onclick="location.reload()">
+      <span>[RESTART SYSTEM]</span>
+    </button>
+  </div>
 </div>
 
 <script>
-  // 1. Attempt to load the data passed from the forest
-  const savedData = localStorage.getItem('woodcutter_legacy');
+// ═══════════════════════════════
+//  DATA & GENETICS (4 GENES, LOW ECONOMY)
+// ═══════════════════════════════
+const MAX_AP = 3;
 
-  if (savedData) {
-    // Parse the JSON string back into a usable JavaScript object
-    const legacyState = JSON.parse(savedData);
+// Economy drastically reduced. 
+// Basic (0) = ~1-2g | Uncommon (1) = ~6-8g | Rare (2) = ~20-25g
+const GENES = {
+  color: [
+    { n: 'White', v: 1, w: 50, r: 0 }, { n: 'Crimson', v: 6, w: 30, r: 1 }, { n: 'Azure', v: 8, w: 15, r: 1 }, { n: 'Obsidian', v: 25, w: 5, r: 2 }
+  ],
+  height: [
+    { n: 'Dwarf', v: 1, w: 40, r: 0 }, { n: 'Standard', v: 2, w: 40, r: 0 }, { n: 'Climbing', v: 7, w: 15, r: 1 }, { n: 'Towering', v: 20, w: 5, r: 2 }
+  ],
+  pattern: [
+    { n: 'Null', v: 0, w: 60, r: 0 }, { n: 'Veined', v: 5, w: 25, r: 1 }, { n: 'Striped', v: 8, w: 10, r: 1 }, { n: 'Fractal', v: 22, w: 5, r: 2 }
+  ],
+  shape: [
+    { n: 'Round', v: 1, w: 50, r: 0 }, { n: 'Needle', v: 5, w: 30, r: 1 }, { n: 'Serrated', v: 9, w: 15, r: 1 }, { n: 'Geometric', v: 30, w: 5, r: 2 }
+  ]
+};
 
-    // Populate the UI with the imported data
-    document.getElementById('dateArrived').textContent = `Y${legacyState.year} D${legacyState.day}`;
-    document.getElementById('goldLeft').textContent = legacyState.gold;
-    
-    // Customize the message based on their leftover resources
-    if (legacyState.wood > 50) {
-      document.getElementById('welcomeText').textContent += ` Your massive stockpile of ${legacyState.wood} logs ensures you will never be cold again.`;
-    }
+const GENE_KEYS = ['color', 'height', 'pattern', 'shape'];
 
-    // 2. Wipe the save so they can't just refresh this page
-    // (You would eventually replace this with a real save system)
-    localStorage.removeItem('woodcutter_legacy');
-    
-  } else {
-    // If they just navigated to cabin.html directly without playing the game
-    document.getElementById('welcomeText').textContent = "You shouldn't be here yet. The forest still calls.";
-    document.querySelector('.stats-board').style.display = 'none';
+let state = {
+  daysLeft: 50, level: 1, gold: 0, ap: MAX_AP,
+  graftingMode: null,
+  pots: Array(9).fill().map(() => ({ status: 'empty' })),
+  target: null,
+  gameOver: false,
+  dailySnapshot: null
+};
+let activePotIndex = null;
+
+// ═══════════════════════════════
+//  TARGET GENERATION
+// ═══════════════════════════════
+function pickGeneOfRarity(geneKey, rarity) {
+  // Use the geneKey to access the correct array inside GENES
+  const pool = GENES[geneKey].filter(g => g.r === rarity);
+  
+  if (pool.length === 0) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function generateTarget() {
+  const reqs = {
+    1: { common: 2, uncommon: 2, rare: 0, matchReq: 3, title: "CONTRACT 01: MATCH 3/4" },
+    2: { common: 0, uncommon: 3, rare: 1, matchReq: 3, title: "CONTRACT 02: MATCH 3/4" },
+    3: { common: 0, uncommon: 2, rare: 2, matchReq: 4, title: "FINAL CONTRACT: PERFECT MATCH" }
+  };
+  
+  const rules = reqs[state.level];
+  // DECLARE 'keys' here so it is available for the loops below
+  let keys = [...GENE_KEYS]; 
+  
+  let newTarget = {};
+  
+  // Helper to safely pick a key and remove it from the pool
+  const popRandomKey = () => {
+    const idx = Math.floor(Math.random() * keys.length);
+    return keys.splice(idx, 1)[0];
+  };
+  
+  // Assign traits based on rules
+  for(let i=0; i < rules.common; i++) {
+    let key = popRandomKey();
+    newTarget[key] = pickGeneOfRarity(key, 0);
   }
-</script>
+  for(let i=0; i < rules.uncommon; i++) {
+    let key = popRandomKey();
+    newTarget[key] = pickGeneOfRarity(key, 1);
+  }
+  for(let i=0; i < rules.rare; i++) {
+    let key = popRandomKey();
+    newTarget[key] = pickGeneOfRarity(key, 2);
+  }
 
+  state.target = { genome: newTarget, rules: rules };
+  state.daysLeft = 50; 
+}
+
+function saveDailySnapshot() {
+  // Deep clone the state to ensure we aren't just storing a reference
+  state.dailySnapshot = JSON.parse(JSON.stringify(state));
+  sysLog("> DAY PROGRESS SAVED.");
+}
+
+function undoToStartOfDay() {
+  if (!state.dailySnapshot) return;
+  
+  // Restore everything except the day counter/timer itself
+  // (Assuming you want to keep the same deadline even if you undo)
+  const daysLeft = state.daysLeft;
+  const level = state.level;
+  const target = state.target;
+  
+  state = JSON.parse(JSON.stringify(state.dailySnapshot));
+  
+  // Restore preserved values
+  state.daysLeft = daysLeft;
+  state.level = level;
+  state.target = target;
+  
+  sysLog("> DAY RESET TO START.");
+  render();
+}
+
+// ═══════════════════════════════
+//  BOOTSTRAP
+// ═══════════════════════════════
+function init() {
+  const savedData = localStorage.getItem('woodcutter_legacy');
+  if (savedData) {
+    try {
+      const legacy = JSON.parse(savedData);
+      state.gold = legacy.gold;
+      sysLog(`> SUBJECT DATA IMPORTED. CARRYING ${legacy.gold} GOLD.`);
+      localStorage.removeItem('woodcutter_legacy'); 
+    } catch(e) {}
+  }
+  generateTarget();
+  saveDailySnapshot();
+  render();
+}
+
+// ═══════════════════════════════
+//  GENETICS ENGINE
+// ═══════════════════════════════
+function rollGene(geneArray, isEnhanced) {
+  let adjustedArray = geneArray.map(g => ({...g}));
+  if (isEnhanced) {
+    adjustedArray.forEach(g => {
+      if (g.w > 40) g.w = 10; else if (g.w < 10) g.w = 40; else g.w = 25;
+    });
+  }
+  const totalWeight = adjustedArray.reduce((s, g) => s + g.w, 0);
+  let r = Math.random() * totalWeight;
+  for (const g of adjustedArray) { r -= g.w; if (r <= 0) return g; }
+  return adjustedArray[0];
+}
+
+function synthesizeSeed(isEnhanced) {
+  const genome = {};
+  let value = 0;
+  GENE_KEYS.forEach(k => {
+    genome[k] = rollGene(GENES[k], isEnhanced);
+    value += genome[k].v;
+  });
+  return { genome, value };
+}
+
+// ═══════════════════════════════
+//  ACTIONS & GRAFTING
+// ═══════════════════════════════
+function interactPot(index) {
+  if (state.gameOver) return;
+
+  if (state.graftingMode !== null) {
+    if (index === state.graftingMode) {
+      state.graftingMode = null; sysLog("> GRAFTING CANCELLED."); render(); return;
+    }
+    const targetPot = state.pots[index];
+    if (targetPot.status === 'bloomed') {
+      if (state.ap < 1) { sysLog("> ERROR: INSUFFICIENT AP."); state.graftingMode = null; render(); return; }
+      state.ap -= 1; performCross(state.graftingMode, index); state.graftingMode = null; render();
+    } else { sysLog("> INVALID TARGET."); }
+    return;
+  }
+
+  activePotIndex = index;
+  const pot = state.pots[index];
+  const title = document.getElementById('modalTitle');
+  const opts = document.getElementById('modalOptions');
+  const geneDisp = document.getElementById('geneDisplay');
+  
+  title.textContent = `SLOT 0${index + 1} — ${pot.status.toUpperCase()}`;
+  opts.innerHTML = ''; geneDisp.style.display = 'none';
+
+  if (pot.status === 'empty') {
+    opts.innerHTML += `<button class="prompt-btn" onclick="actPlant(false)" ${state.ap < 1 ? 'disabled' : ''}>
+      <span>[PLANT] Standard Seed</span> <span class="btn-cost">FREE | 1 AP</span>
+    </button>`;
+    opts.innerHTML += `<button class="prompt-btn" onclick="actPlant(true)" ${state.ap < 1 || state.gold < 50 ? 'disabled' : ''}>
+      <span>[PLANT] Enhanced Seed</span> <span class="btn-cost">50 GOLD | 1 AP</span>
+    </button>`;
+  } 
+  else if (pot.status === 'growing') {
+    const isThirsty = pot.hydration < pot.maxHydration;
+    opts.innerHTML += `<button class="prompt-btn" onclick="actWater()" ${state.ap < 1 || !isThirsty ? 'disabled' : ''}>
+      <span>[MAINTAIN] Hydrate Specimen</span> <span class="btn-cost">1 AP</span>
+    </button>`;
+    opts.innerHTML += `<button class="prompt-btn" onclick="actClear()" style="border-color:var(--dead);color:var(--dead);">
+      <span>[ABORT] Uproot Specimen</span> <span class="btn-cost">0 AP</span>
+    </button>`;
+  }
+  else if (pot.status === 'bloomed') {
+    geneDisp.style.display = 'block';
+    
+    // Highlight genes that match the target
+    let geneHtml = '';
+    GENE_KEYS.forEach(k => {
+      const g = pot.data.genome[k];
+      const matchesTarget = state.target.genome[k].n === g.n;
+      geneHtml += `<div><span class="gene-label">${k.toUpperCase()}:</span> <span class="rarity-${g.r}">${g.n}</span> ${matchesTarget ? ' <span style="color:var(--sprout)">[MATCH]</span>' : ''}</div>`;
+    });
+    
+    geneDisp.innerHTML = geneHtml + `<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><span class="gene-label">EST VALUE:</span> <span class="val-highlight">${pot.data.value} GOLD</span></div>`;
+    
+    opts.innerHTML += `<button class="prompt-btn submit-btn" onclick="actSubmit()" ${state.ap < 1 ? 'disabled' : ''}>
+      <span>[SUBMIT] To Contract Evaluation</span> <span class="btn-cost">1 AP</span>
+    </button>`;
+    opts.innerHTML += `<button class="prompt-btn" style="border-color:var(--bloom)" onclick="actHarvest()" ${state.ap < 1 ? 'disabled' : ''}>
+      <span>[HARVEST] Extract Value</span> <span class="btn-cost">1 AP</span>
+    </button>`;
+    opts.innerHTML += `<button class="prompt-btn" style="border-color:#888" onclick="actPrepareGraft()">
+      <span>[GRAFT] Cross with another bloom</span> <span class="btn-cost">1 AP</span>
+    </button>`;
+  }
+  else if (pot.status === 'dead') {
+    opts.innerHTML += `<button class="prompt-btn" onclick="actClear()" ${state.ap < 1 ? 'disabled' : ''}>
+      <span>[DISCARD] Clear Withered Biomass</span> <span class="btn-cost">1 AP</span>
+    </button>`;
+  }
+
+  document.getElementById('actionModal').classList.add('active');
+}
+
+function actPlant(isEnhanced) {
+  if (state.ap < 1 || (isEnhanced && state.gold < 50)) return;
+  state.ap -= 1; if (isEnhanced) state.gold -= 50;
+  
+  const pot = state.pots[activePotIndex];
+  pot.status = 'growing'; pot.maxHydration = 2; pot.hydration = 2;
+  pot.daysLeft = Math.floor(Math.random() * 3) + 4; // 4-6 days
+  pot.data = synthesizeSeed(isEnhanced);
+
+  sysLog(`> SLOT 0${activePotIndex + 1} SEEDED. EST MATURITY: ${pot.daysLeft} DAYS.`);
+  closeActionModal(); render();
+}
+
+function actWater() {
+  if (state.ap < 1) return;
+  state.ap -= 1; state.pots[activePotIndex].hydration = state.pots[activePotIndex].maxHydration;
+  sysLog(`> SLOT 0${activePotIndex + 1} HYDRATED.`);
+  closeActionModal(); render();
+}
+
+function actHarvest() {
+  if (state.ap < 1) return;
+  state.ap -= 1; const val = state.pots[activePotIndex].data.value;
+  state.gold += val; state.pots[activePotIndex] = { status: 'empty' };
+  sysLog(`> SPECIMEN HARVESTED. ${val} GOLD SECURED.`);
+  closeActionModal(); render();
+}
+
+function actSubmit() {
+  if (state.ap < 1) return;
+  state.ap -= 1;
+  const potGenome = state.pots[activePotIndex].data.genome;
+  const targetGenome = state.target.genome;
+  
+  let matches = 0;
+  GENE_KEYS.forEach(k => { if (potGenome[k].n === targetGenome[k].n) matches++; });
+
+  const rules = state.target.rules;
+  if (matches >= rules.matchReq) {
+    // Success!
+    let reward = 0;
+    if (state.level === 1) reward = matches === 4 ? 150 : 50;
+    else if (state.level === 2) reward = matches === 4 ? 300 : 100;
+    else if (state.level === 3) reward = 1000;
+
+    state.gold += reward;
+    sysLog(`> SUBMISSION ACCEPTED. ${matches}/4 MATCH. REWARD ISSUED: ${reward} GOLD.`);
+    state.pots[activePotIndex] = { status: 'empty' };
+    
+    if (state.level < 3) {
+      state.level++;
+      generateTarget();
+      sysLog(`> ADVANCING TO CONTRACT 0${state.level}. CLOCK RESET.`);
+    } else {
+      sysLog(`> ALL CONTRACTS FULFILLED. PROTOCOL COMPLETE.`);
+      showEndScreen(true, `You have successfully engineered the Apex Specimen with ${state.gold} GOLD secured. The sanctuary has served its purpose.`);
+    }
+  } else {
+    // Failure
+    sysLog(`> SUBMISSION REJECTED. ONLY ${matches}/4 MATCH. SPECIMEN INCINERATED.`);
+    state.pots[activePotIndex] = { status: 'empty' };
+  }
+  
+  closeActionModal(); render();
+}
+
+function actPrepareGraft() {
+  state.graftingMode = activePotIndex;
+  sysLog(`> GRAFTING PROTOCOL INITIATED. SELECT SECOND BLOOMED SPECIMEN TO CROSS.`);
+  closeActionModal(); render();
+}
+
+function performCross(idx1, idx2) {
+  const p1 = state.pots[idx1].data.genome; const p2 = state.pots[idx2].data.genome;
+  const newGenome = {}; let baseValue = 0;
+
+  GENE_KEYS.forEach(t => {
+    const g1 = p1[t]; const g2 = p2[t];
+    let selectedGene;
+    if (g1.n === g2.n) { selectedGene = g1; } 
+    else {
+      const g1Rare = g1.r === 2; const g2Rare = g2.r === 2;
+      if (g1Rare && !g2Rare) selectedGene = Math.random() < 0.25 ? g1 : g2;
+      else if (!g1Rare && g2Rare) selectedGene = Math.random() < 0.25 ? g2 : g1;
+      else selectedGene = Math.random() < 0.5 ? g1 : g2;
+    }
+    newGenome[t] = selectedGene; baseValue += selectedGene.v;
+  });
+
+  state.pots[idx1] = { status: 'empty' };
+  state.pots[idx2] = {
+    status: 'growing', maxHydration: 4, hydration: 4,
+    daysLeft: (Math.floor(Math.random() * 3) + 4) * 2, // 8-12 days
+    data: { genome: newGenome, value: Math.floor(baseValue * 2.5) }
+  };
+  sysLog(`> GRAFT SUCCESSFUL. HYBRID SPECIMEN PLANTED IN SLOT 0${idx2 + 1}.`);
+}
+
+function actClear() {
+  if (state.pots[activePotIndex].status === 'dead') { if (state.ap < 1) return; state.ap -= 1; }
+  state.pots[activePotIndex] = { status: 'empty' }; sysLog(`> SLOT 0${activePotIndex + 1} CLEARED.`);
+  closeActionModal(); render();
+}
+
+function closeActionModal() { document.getElementById('actionModal').classList.remove('active'); activePotIndex = null; }
+
+function showEndScreen(won, message) {
+  state.gameOver = true;
+  const modal = document.getElementById('endModal');
+  const title = document.getElementById('endTitle');
+  const msg = document.getElementById('endMsg');
+
+  if (won) {
+    title.textContent = 'PROTOCOL COMPLETE';
+    title.className = 'end-title win';
+  } else {
+    title.textContent = 'PROTOCOL FAILED';
+    title.className = 'end-title lose';
+  }
+  msg.textContent = message;
+  modal.classList.add('active');
+}
+
+// ═══════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════
+function endDay() {
+  if (state.gameOver) return;
+
+  state.daysLeft--;
+  if (state.daysLeft <= 0) {
+    sysLog("> DEADLINE REACHED. CONTRACT FAILED. PROTOCOL TERMINATED.");
+    showEndScreen(false, `The 50-day deadline has elapsed. Your remaining specimens wither as the sanctuary powers down forever.`);
+    render();
+    return;
+  }
+
+  state.ap = MAX_AP;
+  if (state.graftingMode !== null) { state.graftingMode = null; sysLog("> GRAFTING CANCELLED."); }
+
+  state.pots.forEach((pot) => {
+    if (pot.status === 'growing') {
+      pot.hydration -= 1;
+      if (pot.hydration < 0) pot.status = 'dead';
+      else {
+        pot.daysLeft -= 1;
+        if (pot.daysLeft <= 0) pot.status = 'bloomed';
+      }
+    }
+  });
+  state.ap = MAX_AP;
+  state.graftingMode = null;
+
+  saveDailySnapshot();
+  render();
+}
+
+// ═══════════════════════════════
+//  RENDER
+// ═══════════════════════════════
+function render() {
+  const dateDisp = document.getElementById('dateDisplay');
+  dateDisp.textContent = `${state.daysLeft} DAYS REMAINING`;
+  dateDisp.className = state.daysLeft <= 10 ? 'deadline-warning' : '';
+  
+  document.getElementById('goldDisplay').textContent = `${state.gold} GOLD`;
+
+  // Render Target
+  if (state.target) {
+    document.getElementById('targetTitle').textContent = state.target.rules.title;
+    const tg = state.target.genome;
+    document.getElementById('targetGenes').innerHTML = `
+      <span class="rarity-${tg.color.r}">${tg.color.n}</span>
+      <span class="rarity-${tg.height.r}">${tg.height.n}</span>
+      <span class="rarity-${tg.pattern.r}">${tg.pattern.n}</span>
+      <span class="rarity-${tg.shape.r}">${tg.shape.n}</span>
+    `;
+  }
+
+  // Render AP
+  const apBar = document.getElementById('apBar');
+  document.getElementById('apTitle').textContent = state.graftingMode !== null ? 'GRAFTING MODE: SELECT SECOND BLOOM' : 'DAILY ACTION QUOTA';
+  apBar.className = state.graftingMode !== null ? 'ap-bar grafting' : 'ap-bar';
+  
+  const pips = document.getElementById('apPips'); pips.innerHTML = '';
+  for(let i = 0; i < MAX_AP; i++) pips.innerHTML += `<span class="${i >= state.ap ? 'used' : ''}"></span>`;
+
+  // Render Pots
+  const grid = document.getElementById('greenhouseGrid'); grid.innerHTML = '';
+  state.pots.forEach((pot, index) => {
+    const div = document.createElement('div');
+    div.className = `pot ${pot.status}`;
+    if (state.graftingMode !== null && pot.status === 'bloomed' && index !== state.graftingMode) div.classList.add('targetable');
+    div.onclick = () => interactPot(index);
+    
+    let icon = 'ꖴ', subtext = 'IDLE', hydroHtml = '';
+    if (pot.status === 'growing') {
+      icon = '🌱'; subtext = `${pot.daysLeft} DAYS`;
+      hydroHtml = `<div class="pot-hydration">`;
+      for (let i = 0; i < pot.maxHydration; i++) hydroHtml += `<div class="drop ${pot.hydration > i ? 'filled' : ''}"></div>`;
+      hydroHtml += `</div>`;
+    } 
+    else if (pot.status === 'bloomed') { icon = '🌸'; subtext = 'READY'; }
+    else if (pot.status === 'dead') { icon = '🪦'; subtext = 'WITHERED'; }
+
+    div.innerHTML = `${hydroHtml}<div class="pot-icon">${icon}</div><div class="pot-status">${subtext}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+function sysLog(msg) {
+  const logBox = document.getElementById('systemLog');
+  logBox.innerHTML += msg + '<br>'; logBox.scrollTop = logBox.scrollHeight;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !document.getElementById('actionModal').classList.contains('active') && !state.gameOver) {
+    e.preventDefault(); endDay();
+  }
+});
+
+init();
+</script>
 </body>
 </html>
