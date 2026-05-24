@@ -509,29 +509,53 @@ function actPrepareGraft() {
 }
 
 function performCross(idx1, idx2) {
-  const p1 = state.pots[idx1].data.genome; const p2 = state.pots[idx2].data.genome;
-  const newGenome = {}; let baseValue = 0;
+  const p1 = state.pots[idx1].data.genome; 
+  const p2 = state.pots[idx2].data.genome;
+  const newGenome = {}; 
+  let baseValue = 0;
 
   GENE_KEYS.forEach(t => {
-    const g1 = p1[t]; const g2 = p2[t];
+    const g1 = p1[t]; 
+    const g2 = p2[t];
+    const targetGene = state.target.genome[t].n;
+    
     let selectedGene;
-    if (g1.n === g2.n) { selectedGene = g1; } 
+
+    // 1. If parents are identical, keep it.
+    if (g1.n === g2.n) { 
+      selectedGene = g1; 
+    } 
+    // 2. STABILIZER: Check if one parent matches the target
     else {
-      const g1Rare = g1.r === 2; const g2Rare = g2.r === 2;
-      if (g1Rare && !g2Rare) selectedGene = Math.random() < 0.25 ? g1 : g2;
-      else if (!g1Rare && g2Rare) selectedGene = Math.random() < 0.25 ? g2 : g1;
-      else selectedGene = Math.random() < 0.5 ? g1 : g2;
+      const g1Matches = (g1.n === targetGene);
+      const g2Matches = (g2.n === targetGene);
+
+      if (g1Matches && !g2Matches) {
+        // Parent 1 has the "correct" gene, boost probability to 70%
+        selectedGene = Math.random() < 0.7 ? g1 : g2;
+      } else if (!g1Matches && g2Matches) {
+        // Parent 2 has the "correct" gene, boost probability to 70%
+        selectedGene = Math.random() < 0.7 ? g2 : g1;
+      } else {
+        // Neither or both match, default to 50/50
+        selectedGene = Math.random() < 0.5 ? g1 : g2;
+      }
     }
-    newGenome[t] = selectedGene; baseValue += selectedGene.v;
+
+    newGenome[t] = selectedGene; 
+    baseValue += selectedGene.v;
   });
 
   state.pots[idx1] = { status: 'empty' };
   state.pots[idx2] = {
-    status: 'growing', maxHydration: 4, hydration: 4,
-    daysLeft: (Math.floor(Math.random() * 3) + 4) * 2, // 8-12 days
+    status: 'growing', 
+    maxHydration: 4, 
+    hydration: 4,
+    daysLeft: (Math.floor(Math.random() * 3) + 4) * 2, 
     data: { genome: newGenome, value: Math.floor(baseValue * 2.5) }
   };
-  sysLog(`> GRAFT SUCCESSFUL. HYBRID SPECIMEN PLANTED IN SLOT 0${idx2 + 1}.`);
+  
+  sysLog(`> STABILIZED GRAFT SUCCESSFUL. NEW HYBRID PLANTED IN SLOT 0${idx2 + 1}.`);
 }
 
 function actClear() {
