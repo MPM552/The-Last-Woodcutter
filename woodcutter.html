@@ -606,6 +606,25 @@
   .restart-btn { padding: 12px 28px; background: var(--bark-mid); border: 1px solid var(--gold-dim); border-radius: 2px; color: var(--parchment); font-family: 'Cinzel Decorative', serif; font-size: 0.7rem; letter-spacing: 0.1em; cursor: pointer; transition: all 0.15s; }
   .restart-btn:hover { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,147,42,0.3); }
 
+  /* ── SAVE MENU ── */
+  .save-slot-row {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--bark); border: 1px solid var(--bark-mid); padding: 8px 12px; border-radius: 3px;
+  }
+  .save-slot-info { flex-grow: 1; font-size: 0.85rem; color: var(--parchment); }
+  .save-slot-empty { font-style: italic; color: var(--parchment-dim); }
+  .save-btn { 
+    padding: 6px 12px; font-family: 'Cinzel Decorative', serif; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+    background: rgba(201,147,42,0.12); border: 1px solid var(--gold-dim); color: var(--parchment); border-radius: 2px; cursor: pointer; transition: 0.15s;
+  }
+  .save-btn:hover:not(:disabled) { background: rgba(201,147,42,0.25); border-color: var(--gold); }
+  .load-btn { 
+    padding: 6px 12px; font-family: 'Cinzel Decorative', serif; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+    background: rgba(136,204,102,0.12); border: 1px solid var(--moss-light); color: var(--parchment); border-radius: 2px; cursor: pointer; transition: 0.15s;
+  }
+  .load-btn:hover:not(:disabled) { background: rgba(136,204,102,0.25); border-color: #88cc66; }
+  .load-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
   @keyframes coinSpin { 0% { transform: scale(1); } 50% { transform: scale(1.15) rotateY(90deg); } 100% { transform: scale(1); } }
   .spinning { animation: coinSpin 0.3s ease; }
 </style>
@@ -617,6 +636,29 @@
     <div class="overlay-title" id="overlayTitle">You Have Perished</div>
     <div class="overlay-msg" id="overlayMsg">The forest does not mourn the careless.</div>
     <button class="restart-btn" onclick="restartGame()">Begin Again</button>
+  </div>
+</div>
+
+<div class="overlay" id="saveOverlay">
+  <div class="overlay-box" style="text-align: left; width: 420px; padding: 24px;">
+    <div class="overlay-title" style="color: var(--gold-bright); margin-bottom: 20px; text-align: center;">System Menu</div>
+    
+    <div style="margin-bottom: 24px;">
+      <div style="font-size: 0.8rem; color: var(--parchment-dim); border-bottom: 1px solid var(--bark-mid); padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em;">Local Cache Saves</div>
+      <div id="saveSlotsContainer" style="display: flex; flex-direction: column; gap: 8px;">
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <div style="font-size: 0.8rem; color: var(--parchment-dim); border-bottom: 1px solid var(--bark-mid); padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em;">File Transfer</div>
+      <div style="display: flex; gap: 10px;">
+        <button class="action-btn buy" onclick="exportSave()" style="flex:1; justify-content:center;">📥 Export Save</button>
+        <button class="action-btn buy" onclick="document.getElementById('importFile').click()" style="flex:1; justify-content:center;">📤 Import Save</button>
+        <input type="file" id="importFile" style="display:none;" accept=".json" onchange="importSave(event)">
+      </div>
+    </div>
+
+    <button class="restart-btn" style="width: 100%; margin-top: 10px; border-color: #888;" onclick="closeSaveMenu()">Close Menu</button>
   </div>
 </div>
 
@@ -654,8 +696,14 @@
       <div class="ap-pips" id="apPips"></div>
       <div id="apUpgradeSection"></div>
     </div>
-    <div class="spacebar-hint">
-      Press <strong>Space</strong> to end the day
+    
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div class="spacebar-hint">
+        Press <strong>Space</strong> to end the day
+      </div>
+      <button class="tool-buy-btn" style="font-size: 0.65rem; padding: 5px 12px;" onclick="openSaveMenu()">
+        ⚙️ System
+      </button>
     </div>
   </div>
 
@@ -838,7 +886,7 @@ const SELLER_LEVEL_LABEL = ['', 'Sells Wood', 'Sells Wood · Stone · Geodes', '
 const AXE_COST      = 300;   
 const PICKAXE_COST  = 500;   
 
-const CABIN_COST    = 200;
+const CABIN_COST    = 4000;
 
 const FOREST_UPGRADE_COST = 300;  
 const MINE_UPGRADE_COST   = 400;  
@@ -1667,6 +1715,106 @@ function showOverlay(won, msg) {
   msgEl.textContent = msg; document.getElementById('overlay').className = 'overlay active';
 }
 function restartGame() { document.getElementById('overlay').className = 'overlay'; newGame(); }
+
+// ═══════════════════════════════
+//  SAVE / LOAD SYSTEM
+// ═══════════════════════════════
+
+function openSaveMenu() {
+  renderSaveSlots();
+  document.getElementById('saveOverlay').classList.add('active');
+}
+
+function closeSaveMenu() {
+  document.getElementById('saveOverlay').classList.remove('active');
+}
+
+function renderSaveSlots() {
+  const container = document.getElementById('saveSlotsContainer');
+  container.innerHTML = '';
+
+  for (let i = 1; i <= 3; i++) {
+    const slotKey = `woodcutter_save_${i}`;
+    const saveData = localStorage.getItem(slotKey);
+    let infoHtml = `<span class="save-slot-empty">Empty Slot</span>`;
+    let canLoad = false;
+
+    if (saveData) {
+      try {
+        const parsed = JSON.parse(saveData);
+        infoHtml = `Day ${parsed.day} — ${parsed.gold} Gold`;
+        canLoad = true;
+      } catch (e) {
+        infoHtml = `<span class="save-slot-empty" style="color:var(--blood-bright)">Corrupted Data</span>`;
+      }
+    }
+
+    container.innerHTML += `
+      <div class="save-slot-row">
+        <div style="font-family:'Cinzel Decorative', serif; color:var(--gold); width:50px;">Slot ${i}</div>
+        <div class="save-slot-info">${infoHtml}</div>
+        <button class="save-btn" onclick="saveToSlot(${i})">Save</button>
+        <button class="load-btn" onclick="loadFromSlot(${i})" ${!canLoad ? 'disabled' : ''}>Load</button>
+      </div>
+    `;
+  }
+}
+
+function saveToSlot(slotIndex) {
+  const slotKey = `woodcutter_save_${slotIndex}`;
+  localStorage.setItem(slotKey, JSON.stringify(state));
+  renderSaveSlots(); // refresh UI
+}
+
+function loadFromSlot(slotIndex) {
+  const slotKey = `woodcutter_save_${slotIndex}`;
+  const saveData = localStorage.getItem(slotKey);
+  if (saveData) {
+    applySaveData(saveData);
+    closeSaveMenu();
+    log(`Game loaded from Slot ${slotIndex}.`, 'good');
+  }
+}
+
+// ── File Transfer ──
+function exportSave() {
+  const dataStr = JSON.stringify(state);
+  const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+  const exportFileDefaultName = `woodcutter_save_day${state.day}.json`;
+
+  const linkElement = document.createElement('a');
+  linkElement.setAttribute('href', dataUri);
+  linkElement.setAttribute('download', exportFileDefaultName);
+  linkElement.click();
+}
+
+function importSave(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const contents = e.target.result;
+    applySaveData(contents);
+    closeSaveMenu();
+    log(`Game loaded from file: ${file.name}`, 'good');
+    // reset the input so they can upload the same file again if needed
+    document.getElementById('importFile').value = ''; 
+  };
+  reader.readAsText(file);
+}
+
+function applySaveData(jsonString) {
+  try {
+    const parsedState = JSON.parse(jsonString);
+    // Overwrite the current global state completely
+    state = parsedState;
+    render();
+  } catch (e) {
+    alert("Invalid save file.");
+    console.error(e);
+  }
+}
 
 // ═══════════════════════════════
 //  LOG
