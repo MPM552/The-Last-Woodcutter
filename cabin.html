@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cabin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+  :root {
+    --hearth-dark: #1a0f08;
+    --hearth-glow: #3a2210;
+    --fire: #e88b4b;
+    --parchment: #e8d9b8;
+    --parchment-dim: #b8a888;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--hearth-dark);
+    color: var(--parchment);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* A radial gradient to simulate firelight */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, var(--hearth-glow) 0%, var(--hearth-dark) 70%);
+    opacity: 0.5;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .cabin-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    padding: 40px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #4a3010;
+    border-radius: 4px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  }
+
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 2rem;
+    color: var(--fire);
+    margin-bottom: 20px;
+    letter-spacing: 0.1em;
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: var(--parchment-dim);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .stats-board {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 30px 0;
+    padding: 20px;
+    border-top: 1px solid #4a3010;
+    border-bottom: 1px solid #4a3010;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #888;
+  }
+
+  .stat-value {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.5rem;
+    color: var(--parchment);
+  }
+</style>
+</head>
+<body>
+
+<div class="cabin-wrapper">
+  <h1>The Hearth</h1>
+  <p id="welcomeText">The door clicks shut. The howling wind becomes a distant memory. You have survived.</p>
+  
+  <div class="stats-board">
+    <div class="stat">
+      <span class="stat-label">Arrived On</span>
+      <span class="stat-value" id="dateArrived">Y1 D1</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Remaining Gold</span>
+      <span class="stat-value" id="goldLeft">0</span>
+    </div>
+  </div>
+
+  <p style="font-style: italic; font-size: 0.9rem;">The next chapter of the game begins here...</p>
+</div>
+
+<script>
+  // 1. Attempt to load the data passed from the forest
+  const savedData = localStorage.getItem('woodcutter_legacy');
+
+  if (savedData) {
+    // Parse the JSON string back into a usable JavaScript object
+    const legacyState = JSON.parse(savedData);
+
+    // Populate the UI with the imported data
+    document.getElementById('dateArrived').textContent = `Y${legacyState.year} D${legacyState.day}`;
+    document.getElementById('goldLeft').textContent = legacyState.gold;
+    
+    // Customize the message based on their leftover resources
+    if (legacyState.wood > 50) {
+      document.getElementById('welcomeText').textContent += ` Your massive stockpile of ${legacyState.wood} logs ensures you will never be cold again.`;
+    }
+
+    // 2. Wipe the save so they can't just refresh this page
+    // (You would eventually replace this with a real save system)
+    localStorage.removeItem('woodcutter_legacy');
+    
+  } else {
+    // If they just navigated to cabin.html directly without playing the game
+    document.getElementById('welcomeText').textContent = "You shouldn't be here yet. The forest still calls.";
+    document.querySelector('.stats-board').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>

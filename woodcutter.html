@@ -838,7 +838,7 @@ const SELLER_LEVEL_LABEL = ['', 'Sells Wood', 'Sells Wood · Stone · Geodes', '
 const AXE_COST      = 300;   
 const PICKAXE_COST  = 500;   
 
-const CABIN_COST    = 5000;
+const CABIN_COST    = 200;
 
 const FOREST_UPGRADE_COST = 300;  
 const MINE_UPGRADE_COST   = 400;  
@@ -1135,9 +1135,26 @@ function upgradeMine() {
 
 function buildCabin() {
   if (state.gold < CABIN_COST || state.dead) return;
-  state.gold -= CABIN_COST; state.won = true;
-  showOverlay(true, `You spent ${CABIN_COST} gold and built the Cabin of Your Dreams. Day ${state.day} — you finally rest.`);
+  state.gold -= CABIN_COST;
+  state.won = true;
+
+  // 1. Package up the exact stats we want to carry over to the new game phase
+  const cabinSaveData = {
+    day: state.day,
+    year: state.year,
+    gold: state.gold,
+    wood: state.wood,
+    stone: state.stone,
+    food: state.food
+  };
+
+  // 2. Save it to the browser's local storage
+  localStorage.setItem('woodcutter_legacy', JSON.stringify(cabinSaveData));
+
+  // 3. Redirect to the new HTML file
+  window.location.href = 'cabin.html';
 }
+
 function showGeodeFlash(tierIdx) {
   const tier = GEODE_TIERS[tierIdx]; const val = effectiveGeodeValue(tierIdx);
   const el = document.getElementById('geodeFlash');
